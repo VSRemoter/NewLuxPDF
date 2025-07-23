@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Documents Are Your Business, Not Ours. Period.</title>
+    <link rel="stylesheet" href="styles.css?v=1.1">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <i class="fas fa-crown"></i>
+                LuxPDF
+            </h1>
+            <nav class="nav">
+                <a href="#tools" class="nav-link">Tools</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#comparison" class="nav-link">Comparison</a>
+                <a href="#faq" class="nav-link">FAQ</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="hero">
+            <div class="container">
+                <h2 class="hero-title">Your Documents Are Your Business, Not Ours. Period.</h2>
+                <p class="hero-subtitle">An Open-Source, Free, & Unlimited Privacy-Focused File Conversion & Modification Website.
+                    Convert, Merge, Split, or Compress Your PDF Files Without Ever Worrying About Privacy.
+                </p>
+                <div class="privacy-badge">
+                    <i class="fas fa-shield-alt"></i> 100% Private - Zero Data Collection - No Server Uploads
+                </div>
+                <div class="encryption-line"></div>
+            </div>
+        </section>
+
+        <section id="tools" class="tools-section">
+            <div class="container">
+                <h2 class="section-title">Our Tools</h2>
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="tool-search-bar" placeholder="Search for any tool... (e.g. JPEG to PDF)">
+                </div>
+                <div class="tools-grid">
+                    <!-- PDF to PNG -->
+                    <div class="tool-card" data-tool="pdf-to-png">
+                        <div class="tool-tooltip">Convert PDF documents to PNG images</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-arrow-right"></i>
+                            <i class="fas fa-file-image"></i>
+                        </div>
+                        <h3>PDF to PNG</h3>
+                        <p>Convert PDF pages to high-quality PNG images</p>
+                    </div>
+
+                    <!-- PDF to JPEG -->
+                    <div class="tool-card" data-tool="pdf-to-jpeg">
+                        <div class="tool-tooltip">Convert PDF documents to JPEG images</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-arrow-right"></i>
+                            <i class="fas fa-file-image"></i>
+                        </div>
+                        <h3>PDF to JPEG</h3>
+                        <p>Convert PDF pages to JPEG images</p>
+                    </div>
+
+                    <!-- PNG to PDF -->
+                    <div class="tool-card" data-tool="png-to-pdf">
+                        <div class="tool-tooltip">Convert PNG images to PDF documents</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-image"></i>
+                            <i class="fas fa-arrow-right"></i>
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3>PNG to PDF</h3>
+                        <p>Convert PNG images to PDF documents</p>
+                    </div>
+
+                    <!-- JPEG to PDF -->
+                    <div class="tool-card" data-tool="jpeg-to-pdf">
+                        <div class="tool-tooltip">Convert JPEG images to PDF documents</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-image"></i>
+                            <i class="fas fa-arrow-right"></i>
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3>JPEG to PDF</h3>
+                        <p>Convert JPEG images to PDF documents</p>
+                    </div>
+
+                    <!-- PDF to TXT -->
+                    <div class="tool-card" data-tool="pdf-to-txt">
+                        <div class="tool-tooltip">Extract text from PDF documents</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-arrow-right"></i>
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h3>PDF to TXT</h3>
+                        <p>Extract text content from PDF files</p>
+                    </div>
+
+                    <!-- TXT to PDF -->
+                    <div class="tool-card" data-tool="txt-to-pdf">
+                        <div class="tool-tooltip">Convert text files to PDF format</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-alt"></i>
+                            <i class="fas fa-arrow-right"></i>
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3>TXT to PDF</h3>
+                        <p>Convert text files to PDF documents</p>
+                    </div>
+
+                    <!-- Merge PDF -->
+                    <div class="tool-card" data-tool="merge-pdf">
+                        <div class="tool-tooltip">Combine multiple PDF files into one document</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-plus"></i>
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3>Merge PDF</h3>
+                        <p>Combine multiple PDF files into one</p>
+                    </div>
+
+                    <!-- Split PDF -->
+                    <div class="tool-card" data-tool="split-pdf">
+                        <div class="tool-tooltip">Split PDF into separate pages or custom ranges</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-scissors"></i>
+                        </div>
+                        <h3>Split PDF</h3>
+                        <p>Split PDF into separate pages or ranges</p>
+                    </div>
+
+                    <!-- Compress PDF -->
+                    <div class="tool-card" data-tool="compress-pdf">
+                        <div class="tool-tooltip">Reduce PDF file size while maintaining quality</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </div>
+                        <h3>Compress PDF</h3>
+                        <p>Reduce PDF file size while maintaining quality</p>
+                    </div>
+
+                    <!-- Rotate PDF -->
+                    <div class="tool-card" data-tool="rotate-pdf">
+                        <div class="tool-tooltip">Rotate PDF pages to correct orientation</div>
+                        <div class="tool-icon">
+                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-redo"></i>
+                        </div>
+                        <h3>Rotate PDF</h3>
+                        <p>Rotate PDF pages to correct orientation</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="about-section">
+            <div class="container">
+                <h2 class="section-title">Our Story & Philosphy</h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <p>As college students, whenever we needed to submit homeworks or projects and needed
+                            to quickly convert our PDF Files for submission, we found that no service online fit our needs.
+                            They all charged high prices for the most basic services, were slow, had terrible UI,
+                            and worst of all, had access to view whatever we submitted to convert. We hated this concept of
+                            having to fork our privacy to corporations in order to convert our files.
+                        </p>
+                        <p> Which is why we created LuxPDF, a file conversion and modification website that the does basic things
+                            better than everyone else. While everyone forces you to register, pay a subscription, holds everything in 
+                            the cloud to view & access, and offer a terrible UI experience, we focused primarily on two things: Privacy, and User Experience.
+                            So we got to work, creating a service that not was extremely light-weight and efficient, but also completely Free 
+                            and Privacy-Focused. We do not collect any data ever on the file you upload or modify using our service, as it was intended to be.
+                        </p>
+                        <p> You might be wondering why, how, or what is the philosphy of LuxPDF. Why is it Free & Unlimited? Why no Registrations? How do you afford running the server? 
+                            We want to be completely transparent with the way we plan and want to run LuxPDF. Our service, will be completely Free, with No Registration Needed, and Unlimited.
+                            We allow this simply because all conversions and modifications are done on your computer, client-side, meaning we never touch or view your files ever. 
+                            This has benefits because it means we get to keep our website and codebase lightweight and fast offering a service that is faster and cheaper than all of our competitors. 
+                            Our plan for affording servers and hosting is simply through Ads & Donations. We get it, privacy-focused but offering ads is a deal-breaker. However, in order to operate our service,
+                            we needed to decide whether or not to monetize through Ads or Paid Subscriptions. We believe that simple 2-3 Non-invasive Ads would be more beneficial for the end-user 
+                            while allowing us to afford hosting and other services. We really want to provide a Ad-Free Expereince, but unfortunatly we can not afford it at this time. 
+                            We happily take donations through BuyMeACoffee to help support us financially. 
+
+                        </p>
+                    </div>
+                    <div class="about-features">
+                        <div class="feature">
+                            <i class="fas fa-shield-alt feature-icon"></i>
+                            <h4>Client-Side, Private Conversions</h4>
+                            <p>We can't & never track, store, view, or analyze your files. Your documents never leave your device.</p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-rocket feature-icon"></i>
+                            <h4>Optimized Experience</h4>
+                            <p>Our website is as lightweight & code efficient as possible to support conversions and modifications
+                                as quickly as possible
+                            </p>
+                        </div>
+                        <div class="feature">
+                            <i class="fas fa-dollar feature-icon"></i>
+                            <h4>Free. Open-Sourced. No Registration Needed.</h4>
+                            <p>Our PDF Conversions & Modifications are completely Free with unlimited use, without registration.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Table Section -->
+        <section id="comparison" class="comparison-section">
+            <div class="container">
+                <h2 class="section-title">Why Choose LuxPDF?</h2>
+                <p class="section-description">We are the ultimate website for basic PDF File Conversions & Modification Services</p>
+
+                <div class="comparison-table-container">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Features</th>
+                                <th>LuxPDF</th>
+                                <th>Other Tools</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Privacy-Focused</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="x-mark"><i class="fas fa-times"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Completely Free & Unlimited</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="x-mark"><i class="fas fa-times"></i></td>
+                            </tr>
+                            <tr>
+                                <td>No Registration Required</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="x-mark"><i class="fas fa-times"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Supports Multiple Files</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="x-mark"><i class="fas fa-times"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Efficient & Optimized</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="x-mark"><i class="fas fa-times"></i></td>
+                            </tr>
+                            <tr>
+                                <td>High-Quality Conversion</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>No Watermarks</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="x-mark"><i class="fas fa-times"></i></td>
+                            </tr>
+                            <tr>
+                                <td>Clean UI Experience</td>
+                                <td class="check"><i class="fas fa-check"></i></td>
+                                <td class="x-mark"><i class="fas fa-times"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="faq-section">
+            <div class="container">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <div class="faq-container">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Is this service Free?</h4>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Yes, LuxPDF is open source, free, with unlimited usage.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>How is my privacy protected?</h4>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Your privacy is our top priority. All file processing happens directly in your browser.
+                                Your files are never uploaded to any server, ensuring complete privacy and security. We
+                                have zero access to your documents. You can verify this via inspect-element, that we never
+                            collect anything.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Why do you have ads?</h4>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>As college students, it is difficult to afford not only student loans, but 
+                                operating a website completely for Free. We believe that having a few ads
+                                and not charging subscriptions (and collecting sensitive information such as email, password details)
+                                is a better alternative for the general user.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>What's the point of LuxPDF?</h4>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>We wanted to create the first, and only PDF File Conversion & Modification website
+                                in the world that is not only completely free, unlimited, and open-sourced, but also
+                                focused entirely on efficiency, and privacy. We want to make the best service for basic
+                                File Conversion and Modification services in the world.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>Is there a file size limit?</h4>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Theoretically, all processing happens on your computer, we never touch, convert, or modify your file.
+                                We technically support unlimited File Size and File amount, however, this is entirely dependent on
+                                your device's specifications and whether or not it can handle the size and amount of your requests.
+                                Generally speaking you can convert files upto 100MB with little to no issue.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h4>How are you funded?</h4>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>LuxPDF is funded through our minimally invasive Ads in order to pay for server hosting,
+                                domains, etc. We do take donations via BuyMeACoffee, which is always greatly appreciated. 
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tool Modal -->
+        <div id="tool-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-title">Tool</h3>
+                    <button class="close-btn" id="close-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- File Upload Area -->
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>Drag & Drop Files Here</h4>
+                            <p>or click to select files</p>
+                            <input type="file" id="file-input" multiple accept=".pdf,.png,.txt">
+                        </div>
+                    </div>
+
+                    <!-- File List -->
+                    <div class="file-list" id="file-list"></div>
+
+                    <!-- Tool Options -->
+                    <div class="tool-options" id="tool-options"></div>
+
+                    <!-- Process Button -->
+                    <div class="process-section">
+                        <button class="process-btn" id="process-btn" disabled>
+                            <i class="fas fa-cog"></i>
+                            Process Files
+                        </button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-container" id="progress-container" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text">Processing...</div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="results-section" id="results-section" style="display: none;">
+                        <h4>Download Results</h4>
+                        <div class="results-list" id="results-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-crown"></i>
+                    <span>LuxPDF</span>
+                </div>
+                <div class="footer-privacy">
+                    <div class="privacy-badge">
+                        <i class="fas fa-lock"></i> Your Files Stay Private
+                    </div>
+                </div>
+                <p class="copyright">&copy; 2025 LuxPDF. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        // Initialize PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+
+</html>
