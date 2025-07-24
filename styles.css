@@ -675,8 +675,57 @@ Upload Area */
 .download-btn:hover {
     background: var(--accent-dark);
     transform: translateY(-2px);
-}/*
- Footer */
+}
+
+/* Policy Page Styles */
+.policy-section {
+    padding: 80px 0;
+    background: var(--background-dark);
+}
+
+.policy-content {
+    background: var(--background-light);
+    padding: 40px;
+    border-radius: var(--border-radius);
+    color: var(--text-light);
+    line-height: 1.8;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.policy-content h3 {
+    color: var(--text-light);
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+.policy-content p,
+.policy-content ul {
+    margin-bottom: 20px;
+    color: rgba(248, 250, 252, 0.8);
+}
+
+.policy-content ul {
+    padding-left: 20px;
+}
+
+.policy-content li {
+    margin-bottom: 10px;
+}
+
+.policy-content a {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+.policy-content a:hover {
+    color: var(--primary-light);
+}
+
+/* Footer */
 .footer {
     background: var(--background-dark);
     text-align: center;
@@ -722,6 +771,25 @@ Upload Area */
 
 .footer-privacy {
     margin: 0.5rem 0;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.footer-link {
+    color: rgba(248, 250, 252, 0.7);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.footer-link:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
 }
 
 .copyright {
