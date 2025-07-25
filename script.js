@@ -192,6 +192,21 @@ class PDFConverterPro {
                 title: 'Remove Password from PDF',
                 accept: '.pdf',
                 description: 'Decrypt password-protected PDF files'
+            },
+            'extract-pages': {
+                title: 'Extract Pages from PDF',
+                accept: '.pdf',
+                description: 'Select and extract specific pages from PDF'
+            },
+            'remove-pages': {
+                title: 'Remove Pages from PDF',
+                accept: '.pdf',
+                description: 'Delete specific pages from PDF files'
+            },
+            'sort-pages': {
+                title: 'Sort PDF Pages',
+                accept: '.pdf',
+                description: 'Drag and drop to reorder PDF pages'
             }
         };
         return configs[toolName] || { title: 'PDF Tool', accept: '*', description: '' };
@@ -299,12 +314,26 @@ class PDFConverterPro {
         if (file.type.includes('image') && this.currentTool !== 'png-to-pdf' && this.currentTool !== 'jpeg-to-pdf') {
             this.generateImagePreview(file);
         }
+
+        // Generate page thumbnails for sort pages tool
+        if (file.type.includes('pdf') && this.currentTool === 'sort-pages') {
+            this.generatePageThumbnails(file);
+        }
     }
 
     removeFile(fileName) {
         this.uploadedFiles = this.uploadedFiles.filter(file => file.name !== fileName);
         this.updateFileList();
         this.updateProcessButton();
+
+        // Clear thumbnails if this was for sort pages tool
+        if (this.currentTool === 'sort-pages' && this.uploadedFiles.length === 0) {
+            const thumbnailContainer = document.getElementById('page-thumbnails');
+            if (thumbnailContainer) {
+                thumbnailContainer.innerHTML = '';
+                thumbnailContainer.style.display = 'none';
+            }
+        }
     }
 
     updateFileList() {
@@ -567,6 +596,44 @@ class PDFConverterPro {
                     </div>
                 `;
                 break;
+
+            case 'extract-pages':
+                optionsContainer.innerHTML = `
+                    <div class="option-group">
+                        <label>Pages to Extract (e.g., 1, 3, 5-8, 10)</label>
+                        <input type="text" id="pages-to-extract" placeholder="1, 3, 5-8, 10">
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Specify which pages to extract. Use commas for individual pages and hyphens for ranges.
+                        </p>
+                    </div>
+                `;
+                break;
+
+            case 'remove-pages':
+                optionsContainer.innerHTML = `
+                    <div class="option-group">
+                        <label>Pages to Remove (e.g., 2, 4, 6-9, 15)</label>
+                        <input type="text" id="pages-to-remove" placeholder="2, 4, 6-9, 15">
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Specify which pages to remove. Use commas for individual pages and hyphens for ranges.
+                        </p>
+                    </div>
+                `;
+                break;
+
+            case 'sort-pages':
+                optionsContainer.innerHTML = `
+                    <div class="option-group">
+                        <p>Upload a PDF file to see page thumbnails that you can drag and drop to reorder.</p>
+                        <div id="page-thumbnails" class="page-thumbnails-container" style="display: none;">
+                            <!-- Page thumbnails will be generated here -->
+                        </div>
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Drag and drop the page thumbnails to rearrange them in your desired order.
+                        </p>
+                    </div>
+                `;
+                break;
         }
     }
 
@@ -636,6 +703,15 @@ class PDFConverterPro {
                     break;
                 case 'remove-password':
                     results = await this.removePassword();
+                    break;
+                case 'extract-pages':
+                    results = await this.extractPages();
+                    break;
+                case 'remove-pages':
+                    results = await this.removePages();
+                    break;
+                case 'sort-pages':
+                    results = await this.sortPages();
                     break;
             }
 
@@ -1930,6 +2006,359 @@ class PDFConverterPro {
         }
 
         return results;
+    }
+
+    // Extract Pages functionality
+    async extractPages() {
+        const results = [];
+        const pagesInput = document.getElementById('pages-to-extract');
+        const pagesToExtract = pagesInput ? pagesInput.value.trim() : '';
+
+        if (!pagesToExtract) {
+            throw new Error('Please specify which pages to extract');
+        }
+
+        for (const file of this.uploadedFiles) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const totalPages = pdfDoc.getPageCount();
+
+                // Parse page numbers
+                const pageNumbers = this.parsePageNumbers(pagesToExtract, totalPages);
+
+                if (pageNumbers.length === 0) {
+                    throw new Error('No valid pages specified');
+                }
+
+                // Create new PDF with extracted pages
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+
+                for (const pageNum of pageNumbers) {
+                    const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageNum - 1]);
+                    newPdfDoc.addPage(copiedPage);
+                }
+
+                const pdfBytes = await newPdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+                const baseName = file.name.replace(/\.pdf$/i, '');
+                const fileName = `${baseName}_extracted_pages.pdf`;
+
+                results.push({
+                    name: fileName,
+                    type: 'application/pdf',
+                    size: blob.size,
+                    url: URL.createObjectURL(blob)
+                });
+
+                this.showNotification(`Successfully extracted ${pageNumbers.length} pages from ${file.name}`, 'success');
+
+            } catch (error) {
+                console.error('Error extracting pages:', error);
+                throw new Error(`Failed to extract pages from ${file.name}: ${error.message}`);
+            }
+        }
+
+        return results;
+    }
+
+    // Remove Pages functionality
+    async removePages() {
+        const results = [];
+        const pagesInput = document.getElementById('pages-to-remove');
+        const pagesToRemove = pagesInput ? pagesInput.value.trim() : '';
+
+        if (!pagesToRemove) {
+            throw new Error('Please specify which pages to remove');
+        }
+
+        for (const file of this.uploadedFiles) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const totalPages = pdfDoc.getPageCount();
+
+                // Parse page numbers to remove
+                const pageNumbers = this.parsePageNumbers(pagesToRemove, totalPages);
+
+                if (pageNumbers.length === 0) {
+                    throw new Error('No valid pages specified');
+                }
+
+                if (pageNumbers.length >= totalPages) {
+                    throw new Error('Cannot remove all pages from PDF');
+                }
+
+                // Create new PDF with remaining pages
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+
+                for (let i = 1; i <= totalPages; i++) {
+                    if (!pageNumbers.includes(i)) {
+                        const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [i - 1]);
+                        newPdfDoc.addPage(copiedPage);
+                    }
+                }
+
+                const pdfBytes = await newPdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+                const baseName = file.name.replace(/\.pdf$/i, '');
+                const fileName = `${baseName}_pages_removed.pdf`;
+
+                results.push({
+                    name: fileName,
+                    type: 'application/pdf',
+                    size: blob.size,
+                    url: URL.createObjectURL(blob)
+                });
+
+                this.showNotification(`Successfully removed ${pageNumbers.length} pages from ${file.name}`, 'success');
+
+            } catch (error) {
+                console.error('Error removing pages:', error);
+                throw new Error(`Failed to remove pages from ${file.name}: ${error.message}`);
+            }
+        }
+
+        return results;
+    }
+
+    // Sort Pages functionality
+    async sortPages() {
+        const results = [];
+
+        for (const file of this.uploadedFiles) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const totalPages = pdfDoc.getPageCount();
+
+                // Get the current page order from the UI
+                const pageOrder = this.getPageOrderFromUI();
+
+                if (!pageOrder || pageOrder.length !== totalPages) {
+                    // If no custom order is set, use original order
+                    const originalOrder = Array.from({ length: totalPages }, (_, i) => i);
+                    return await this.createSortedPDF(pdfDoc, originalOrder, file);
+                }
+
+                // Create new PDF with sorted pages
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+
+                for (const pageIndex of pageOrder) {
+                    const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageIndex]);
+                    newPdfDoc.addPage(copiedPage);
+                }
+
+                const pdfBytes = await newPdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+                const baseName = file.name.replace(/\.pdf$/i, '');
+                const fileName = `${baseName}_sorted.pdf`;
+
+                results.push({
+                    name: fileName,
+                    type: 'application/pdf',
+                    size: blob.size,
+                    url: URL.createObjectURL(blob)
+                });
+
+                this.showNotification(`Successfully reordered pages in ${file.name}`, 'success');
+
+            } catch (error) {
+                console.error('Error sorting pages:', error);
+                throw new Error(`Failed to sort pages in ${file.name}: ${error.message}`);
+            }
+        }
+
+        return results;
+    }
+
+    // Helper function to parse page numbers from string input
+    parsePageNumbers(input, totalPages) {
+        const pageNumbers = new Set();
+        const parts = input.split(',');
+
+        for (let part of parts) {
+            part = part.trim();
+
+            if (part.includes('-')) {
+                // Handle range (e.g., "5-8")
+                const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+                if (isNaN(start) || isNaN(end) || start < 1 || end > totalPages || start > end) {
+                    throw new Error(`Invalid page range: ${part}`);
+                }
+                for (let i = start; i <= end; i++) {
+                    pageNumbers.add(i);
+                }
+            } else {
+                // Handle single page
+                const pageNum = parseInt(part);
+                if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+                    throw new Error(`Invalid page number: ${part}`);
+                }
+                pageNumbers.add(pageNum);
+            }
+        }
+
+        return Array.from(pageNumbers).sort((a, b) => a - b);
+    }
+
+    // Helper function to get page order from UI (for sort pages feature)
+    getPageOrderFromUI() {
+        const thumbnailContainer = document.getElementById('page-thumbnails');
+        if (!thumbnailContainer) return null;
+
+        const thumbnails = thumbnailContainer.querySelectorAll('.page-thumbnail');
+        return Array.from(thumbnails).map(thumb => parseInt(thumb.dataset.pageIndex));
+    }
+
+    // Helper function to download results
+    downloadResult(url, filename) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Show success notification
+        this.showNotification(`Downloaded: ${filename}`, 'success');
+    }
+
+    // Helper function to save last used tool
+    saveLastUsedTool() {
+        try {
+            localStorage.setItem('luxpdf-last-tool', this.currentTool);
+        } catch (error) {
+            // Ignore localStorage errors
+        }
+    }
+
+    // Helper function to load last used tool
+    loadLastUsedTool() {
+        try {
+            const lastTool = localStorage.getItem('luxpdf-last-tool');
+            if (lastTool) {
+                // Could implement auto-opening last tool if desired
+            }
+        } catch (error) {
+            // Ignore localStorage errors
+        }
+    }
+
+    // Generate page thumbnails for sort pages feature
+    async generatePageThumbnails(file) {
+        if (this.currentTool !== 'sort-pages') return;
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+            const thumbnailContainer = document.getElementById('page-thumbnails');
+
+            if (!thumbnailContainer) return;
+
+            thumbnailContainer.innerHTML = '';
+            thumbnailContainer.style.display = 'grid';
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 0.3 });
+
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+
+                const thumbnailDiv = document.createElement('div');
+                thumbnailDiv.className = 'page-thumbnail';
+                thumbnailDiv.draggable = true;
+                thumbnailDiv.dataset.pageIndex = pageNum - 1;
+
+                thumbnailDiv.innerHTML = `
+                    <div class="thumbnail-header">Page ${pageNum}</div>
+                    <div class="thumbnail-canvas-container">
+                        ${canvas.outerHTML}
+                    </div>
+                `;
+
+                this.setupThumbnailDragAndDrop(thumbnailDiv);
+                thumbnailContainer.appendChild(thumbnailDiv);
+            }
+
+        } catch (error) {
+            console.error('Error generating thumbnails:', error);
+            this.showNotification('Failed to generate page thumbnails', 'error');
+        }
+    }
+
+    // Setup drag and drop for page thumbnails
+    setupThumbnailDragAndDrop(thumbnail) {
+        thumbnail.addEventListener('dragstart', (e) => {
+            thumbnail.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', thumbnail.dataset.pageIndex);
+        });
+
+        thumbnail.addEventListener('dragend', () => {
+            thumbnail.classList.remove('dragging');
+            document.querySelectorAll('.page-thumbnail').forEach(thumb => {
+                thumb.style.borderTop = '';
+                thumb.style.borderBottom = '';
+            });
+        });
+
+        thumbnail.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            const draggingThumb = document.querySelector('.page-thumbnail.dragging');
+            if (draggingThumb && draggingThumb !== thumbnail) {
+                const rect = thumbnail.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+
+                thumbnail.style.borderTop = '';
+                thumbnail.style.borderBottom = '';
+
+                if (e.clientY < midY) {
+                    thumbnail.style.borderTop = '3px solid var(--accent-color)';
+                } else {
+                    thumbnail.style.borderBottom = '3px solid var(--accent-color)';
+                }
+            }
+        });
+
+        thumbnail.addEventListener('drop', (e) => {
+            e.preventDefault();
+            thumbnail.style.borderTop = '';
+            thumbnail.style.borderBottom = '';
+
+            const draggedPageIndex = e.dataTransfer.getData('text/plain');
+            const targetPageIndex = thumbnail.dataset.pageIndex;
+
+            if (draggedPageIndex && draggedPageIndex !== targetPageIndex) {
+                const container = thumbnail.parentNode;
+                const draggedThumb = container.querySelector(`[data-page-index="${draggedPageIndex}"]`);
+
+                if (draggedThumb) {
+                    const rect = thumbnail.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    const insertAfter = e.clientY >= midY;
+
+                    if (insertAfter) {
+                        container.insertBefore(draggedThumb, thumbnail.nextSibling);
+                    } else {
+                        container.insertBefore(draggedThumb, thumbnail);
+                    }
+                }
+            }
+        });
     }
 }
 
