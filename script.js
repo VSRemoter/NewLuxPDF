@@ -181,6 +181,11 @@ class PDFConverterPro {
                 title: 'Rotate PDF Pages',
                 accept: '.pdf',
                 description: 'Rotate PDF pages'
+            },
+            'remove-metadata': {
+                title: 'Remove PDF Metadata',
+                accept: '.pdf',
+                description: 'Strip all metadata from PDF files'
             }
         };
         return configs[toolName] || { title: 'PDF Tool', accept: '*', description: '' };
@@ -502,6 +507,17 @@ class PDFConverterPro {
                     </div>
                 `;
                 break;
+
+            case 'remove-metadata':
+                optionsContainer.innerHTML = `
+                    <div class="option-group">
+                        <p>Click "Process Files" to remove all metadata from your PDF.</p>
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            This will strip all metadata including author, title, creation date, and other identifying information.
+                        </p>
+                    </div>
+                `;
+                break;
         }
     }
 
@@ -565,6 +581,9 @@ class PDFConverterPro {
                     break;
                 case 'rotate-pdf':
                     results = await this.rotatePdf();
+                    break;
+                case 'remove-metadata':
+                    results = await this.removeMetadata();
                     break;
             }
 
@@ -1422,6 +1441,73 @@ class PDFConverterPro {
             bytes[i] = binaryString.charCodeAt(i);
         }
         return bytes;
+    }
+
+    // Remove Metadata from PDF
+    async removeMetadata() {
+        const results = [];
+
+        for (const file of this.uploadedFiles) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const originalSize = file.size;
+
+                // Load the original PDF
+                const originalPdf = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+                // Create a completely new, empty PDF document
+                const cleanPdf = await PDFLib.PDFDocument.create();
+
+                // Copy all pages from original to clean PDF (without metadata)
+                const pageIndices = Array.from({ length: originalPdf.getPageCount() }, (_, i) => i);
+                const copiedPages = await cleanPdf.copyPages(originalPdf, pageIndices);
+
+                // Add all copied pages to the clean PDF
+                copiedPages.forEach(page => cleanPdf.addPage(page));
+
+                // Save the clean PDF (no metadata will be included)
+                const cleanPdfBytes = await cleanPdf.save({
+                    useObjectStreams: false,
+                    addDefaultPage: false,
+                    objectStreamsThreshold: 40,
+                    updateFieldAppearances: false
+                });
+
+                const cleanBlob = new Blob([cleanPdfBytes], { type: 'application/pdf' });
+                const cleanSize = cleanBlob.size;
+
+                // Calculate size difference
+                const sizeDifference = originalSize - cleanSize;
+                const sizeChangeText = sizeDifference > 0 ? 
+                    `(${this.formatFileSize(sizeDifference)} smaller)` : 
+                    sizeDifference < 0 ? 
+                    `(${this.formatFileSize(Math.abs(sizeDifference))} larger)` : 
+                    '(same size)';
+
+                this.showNotification(`Metadata removed from ${file.name} ${sizeChangeText}`, 'success');
+
+                results.push({
+                    name: `clean_${file.name}`,
+                    type: 'application/pdf',
+                    size: cleanSize,
+                    url: URL.createObjectURL(cleanBlob)
+                });
+
+            } catch (error) {
+                console.error('Error removing metadata:', error);
+                this.showNotification(`Failed to remove metadata from ${file.name}: ${error.message}`, 'error');
+                
+                // Return original file as fallback
+                results.push({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    url: URL.createObjectURL(file)
+                });
+            }
+        }
+
+        return results;
     }
 
     // Rotate PDF
