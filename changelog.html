@@ -1,76 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Changelog - LuxPDF</title>
     <link rel="stylesheet" href="styles.css?v=1.1">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <meta name="description" content="A record of all notable changes, bug fixes, and new features for LuxPDF.">
+    <meta name="description" content="LuxPDF changelog - track new features and improvements.">
 </head>
+
 <body>
-    <header>
+    <header class="header">
         <div class="container">
-            <a href="/" class="logo-link">
-                <i class="fas fa-crown logo-icon"></i>
-                <h1>LuxPDF</h1>
-            </a>
-            <nav>
-                <a href="/">Home</a>
+            <h1 class="logo">
+                <a href="/"
+                    style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-crown"></i>
+                    LuxPDF
+                </a>
+            </h1>
+            <nav class="nav">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#tools" class="nav-link">Tools</a>
+                <a href="/#about" class="nav-link">About</a>
+                <a href="/#faq" class="nav-link">FAQ</a>
             </nav>
         </div>
     </header>
 
-    <main class="container static-page">
-        <h2>Changelog</h2>
-        <p>A record of all notable changes made to LuxPDF. We are constantly working to improve our tools and add new features.</p>
+    <main class="main">
+        <section class="policy-section">
+            <div class="container">
+                <div class="policy-content">
+                    <h2>Changelog</h2>
+                    <p>Track our progress as we continuously improve LuxPDF with new features and enhancements.</p>
 
-        <div class="changelog-entry">
-            <h3>Version 1.2 - July 2025</h3>
-            <ul>
-                <li><strong>New:</strong> Added a public changelog to track all future updates!</li>
-                <li><strong>Fixed:</strong> Completely rebuilt the PDF to PNG/JPEG converters. They now correctly render high-quality images.</li>
-                <li><strong>Fixed:</strong> Implemented real PDF compression. The tool now properly reduces file size where possible.</li>
-                <li><strong>Fixed:</strong> The PDF to TXT tool is now fully functional.</li>
-                <li><strong>Infrastructure:</strong> Migrated the entire website from Netlify to Cloudflare Pages for improved performance, scalability, and unlimited free bandwidth.</li>
-                <li><strong>Infrastructure:</strong> Added all necessary PDF processing libraries (`pdf-lib`, `pdf.js`) directly to the site for improved reliability.</li>
-            </ul>
-        </div>
+                    <!-- Upcoming Features -->
+                    <h3>🚀 Upcoming Features</h3>
+                    <ul>
+                        <li><strong>PDF Encryption:</strong> Add password protection (challenging for client-side)</li>
+                        <li><strong>Watermarks:</strong> Add custom text or image watermarks</li>
+                        <li><strong>Digital Signatures:</strong> Sign PDFs for authenticity</li>
+                        <li><strong>Word Conversion:</strong> Convert between PDF and Word formats</li>
+                    </ul>
 
-        <div class="changelog-entry">
-            <h3>Beta 0.75 - July 2025</h3>
-            <ul>
-                <li><strong>New:</strong> Added a custom favicon to match the brand's logo and color scheme.</li>
-                <li><strong>SEO:</strong> Implemented SEO-optimized meta descriptions and title tags across the site.</li>
-                <li><strong>SEO:</strong> Created and submitted a `sitemap.xml` to search engines.</li>
-                <li><strong>Monetization:</strong> Integrated Google AdSense script.</li>
-                <li><strong>Features:</strong> Add new features including: Compress, Rotate, Remove Metadata, PDF-TXT etc</li>
-                <li><strong>UI:</strong> Complete overhaul in UI, color scheme, layout, and responsiveness.</li>
-            </ul>
-        </div>
+                    <!-- Beta 0.6 -->
+                    <h3>Beta 0.6 - Major Feature Update (January 2025)</h3>
+                    <p><strong>New Features:</strong></p>
+                    <ul>
+                        <li>Smart Search Bar - Quickly find any tool</li>
+                        <li>Our Story & Philosophy section</li>
+                        <li>Comprehensive FAQ section</li>
+                        <li>Advanced PDF Tools: Extract Pages, Remove Pages, Sort Pages</li>
+                        <li>Remove Password tool - Decrypt protected PDFs</li>
+                        <li>Remove Metadata tool - Strip metadata for privacy</li>
+                        <li>BuyMeACoffee integration for donations</li>
+                        <li>Feature comparison table</li>
+                    </ul>
+                    <p><strong>Improvements:</strong></p>
+                    <ul>
+                        <li>Enhanced UI with smooth animations</li>
+                        <li>Better mobile responsiveness</li>
+                        <li>Optimized performance and loading times</li>
+                        <li>Improved error handling and user feedback</li>
+                    </ul>
 
-        <div class="changelog-entry">
-            <h3>Alpha 0.5 - Initial Release</h3>
-            <ul>
-                <li>Created basic UI for the website</li>
-                <li>Implemented the Algorithm for smooth PDF to Image Conversions</li>
-                <li>Implemented the Algorithm for smooth Merging and Splitting of PDF Files</li>
-                <li>Purchased the domain LuxPDF.com, created the logo, favicon, and other assets</li>
-                <li>Connected LuxPDF.com to Cloudflare, GitHub and other services</li>
+                    <!-- Alpha 0.5 -->
+                    <h3>Alpha 0.5 - Optimization (December 2024)</h3>
+                    <p><strong>Infrastructure:</strong></p>
+                    <ul>
+                        <li>Cloudflare optimization for global performance</li>
+                        <li>Codebase restructuring for efficiency</li>
+                        <li>Business email setup for support</li>
+                    </ul>
+                    <p><strong>Bug Fixes:</strong></p>
+                    <ul>
+                        <li>Completely rebuilt PDF to PNG/JPEG converters</li>
+                        <li>Fixed TXT to PDF conversion issues</li>
+                        <li>Improved error handling across all tools</li>
+                    </ul>
+                    <p><strong>New Features:</strong></p>
+                    <ul>
+                        <li>Real PDF compression algorithm</li>
+                        <li>PDF rotation functionality</li>
+                        <li>Proper changelog system</li>
+                        <li>Privacy policy and terms of service</li>
+                    </ul>
 
-            </ul>
-        </div>
+                    <!-- Alpha 0.3 -->
+                    <h3>Alpha 0.3 - Major UI Revamp (November 2024)</h3>
+                    <p><strong>Design:</strong></p>
+                    <ul>
+                        <li>Complete UI redesign with modern aesthetics</li>
+                        <li>New color scheme and branding</li>
+                        <li>Enhanced mobile responsiveness</li>
+                        <li>Custom favicon and brand assets</li>
+                    </ul>
+                    <p><strong>SEO & Marketing:</strong></p>
+                    <ul>
+                        <li>SEO-optimized meta descriptions and titles</li>
+                        <li>Sitemap.xml creation and submission</li>
+                        <li>Google AdSense integration</li>
+                    </ul>
+                    <p><strong>New Tools:</strong></p>
+                    <ul>
+                        <li>PDF Compression</li>
+                        <li>PDF Rotation</li>
+                        <li>Metadata Removal</li>
+                        <li>Enhanced PDF-TXT conversion</li>
+                    </ul>
+
+                    <!-- Alpha 0.1 -->
+                    <h3>Alpha 0.1 - Initial Release (October 2024)</h3>
+                    <p><strong>Foundation:</strong></p>
+                    <ul>
+                        <li>Initial concept: Privacy-first PDF tools</li>
+                        <li>Domain acquisition (LuxPDF.com)</li>
+                        <li>Logo and brand identity creation</li>
+                        <li>Basic frontend architecture</li>
+                    </ul>
+                    <p><strong>Core Features:</strong></p>
+                    <ul>
+                        <li>PDF to Image conversion engine</li>
+                        <li>PDF merging algorithm</li>
+                        <li>PDF splitting functionality</li>
+                        <li>Client-side processing architecture</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <footer>
+    <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 LuxPDF. All rights reserved.</p>
-            <nav>
-                <a href="privacy.html">Privacy Policy</a>
-                <a href="terms.html">Terms of Service</a>
-                <a href="changelog.html">Changelog</a>
-            </nav>
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-crown"></i>
+                    <span>LuxPDF</span>
+                </div>
+                <div class="footer-privacy">
+                    <div class="privacy-badge">
+                        <i class="fas fa-lock"></i> Your Files Stay Private
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <a href="terms.html" class="footer-link">Terms of Service</a>
+                    <a href="changelog.html" class="footer-link">Changelog</a>
+                    <a href="privacy.html" class="footer-link">Privacy Policy</a>
+                </div>
+                <p class="copyright">&copy; 2025 LuxPDF. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 </body>
+
 </html>

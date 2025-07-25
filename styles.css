@@ -1501,7 +1501,18 @@ n Table Section */
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    animation: encrypt-scan 2s infinite;
+}
+
+@keyframes encrypt-scan {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+} linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     animation: encrypt-scan 2s infinite;
 }
 
@@ -1665,7 +1676,333 @@ n Table Section */
 
 .page-operation-success i {
     font-size: 1.2rem;
-} linear-gradient(90deg, 
+}
+
+/* Changelog Specific Styles */
+.changelog-hero {
+    background: linear-gradient(135deg, var(--background-dark) 0%, var(--background-light) 50%, var(--primary-color) 100%);
+    padding: 4rem 0;
+}
+
+.roadmap-section {
+    padding: 6rem 0;
+    background: var(--background-light);
+    position: relative;
+}
+
+.roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.roadmap-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.roadmap-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: var(--transition);
+}
+
+.roadmap-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.roadmap-item:hover::before {
+    transform: scaleX(1);
+}
+
+.roadmap-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 1.5rem;
+    color: var(--text-light);
+}
+
+.roadmap-item h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-light);
+}
+
+.roadmap-item p {
+    color: rgba(248, 250, 252, 0.7);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.roadmap-status {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.roadmap-status.in-progress {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--info-color);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.roadmap-status.planned {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.changelog-section {
+    padding: 6rem 0;
+    background: var(--background-dark);
+}
+
+.changelog-timeline {
+    max-width: 900px;
+    margin: 3rem auto 0;
+    position: relative;
+}
+
+.changelog-timeline::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--primary-color), var(--accent-color));
+    opacity: 0.3;
+}
+
+.changelog-entry {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius);
+    margin-bottom: 3rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    margin-left: 60px;
+    transition: var(--transition);
+}
+
+.changelog-entry::before {
+    content: '';
+    position: absolute;
+    left: -45px;
+    top: 30px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    border: 3px solid var(--background-dark);
+    box-shadow: 0 0 0 3px rgba(0, 200, 150, 0.3);
+}
+
+.changelog-entry:hover {
+    transform: translateX(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.changelog-header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.version-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.version-badge.beta {
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    color: var(--text-light);
+}
+
+.version-badge.alpha {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.changelog-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin: 0;
+    flex: 1;
+}
+
+.release-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(248, 250, 252, 0.6);
+    font-size: 0.9rem;
+}
+
+.changelog-content {
+    padding: 2rem;
+}
+
+.feature-category {
+    margin-bottom: 2rem;
+}
+
+.feature-category:last-child {
+    margin-bottom: 0;
+}
+
+.feature-category h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-category h4 i {
+    color: var(--accent-color);
+}
+
+.feature-category ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-category li {
+    padding: 0.8rem 0;
+    color: rgba(248, 250, 252, 0.8);
+    line-height: 1.6;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: var(--transition);
+}
+
+.feature-category li:last-child {
+    border-bottom: none;
+}
+
+.feature-category li:hover {
+    color: var(--text-light);
+    padding-left: 1rem;
+}
+
+.feature-category li strong {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+/* Responsive design for changelog */
+@media (max-width: 768px) {
+    .changelog-timeline::before {
+        left: 15px;
+    }
+    
+    .changelog-entry {
+        margin-left: 40px;
+    }
+    
+    .changelog-entry::before {
+        left: -30px;
+        width: 12px;
+        height: 12px;
+    }
+    
+    .changelog-header {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .roadmap-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .changelog-hero {
+        padding: 3rem 0;
+    }
+}
+
+/* Reverse button for sort pages */
+.reverse-btn {
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    color: var(--text-light);
+    border: none;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 auto;
+    box-shadow: 0 3px 10px rgba(58, 123, 213, 0.2);
+}
+
+.reverse-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(58, 123, 213, 0.3);
+}
+
+.reverse-btn i {
+    font-size: 1rem;
+}
+
+/* Sort controls container */
+.sort-controls {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Encryption line animation fix */
+.encryption-line::before {
+    background: linear-gradient(90deg, 
         transparent, 
         rgba(255, 255, 255, 0.8), 
         transparent);

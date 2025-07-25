@@ -625,6 +625,12 @@ class PDFConverterPro {
                 optionsContainer.innerHTML = `
                     <div class="option-group">
                         <p>Upload a PDF file to see page thumbnails that you can drag and drop to reorder.</p>
+                        <div class="sort-controls" style="display: none; margin: 1rem 0;">
+                            <button type="button" id="reverse-pages-btn" class="reverse-btn">
+                                <i class="fas fa-exchange-alt"></i>
+                                Reverse Order (Back to Front)
+                            </button>
+                        </div>
                         <div id="page-thumbnails" class="page-thumbnails-container" style="display: none;">
                             <!-- Page thumbnails will be generated here -->
                         </div>
@@ -633,6 +639,16 @@ class PDFConverterPro {
                         </p>
                     </div>
                 `;
+
+                // Add event listener for reverse button after DOM is updated
+                setTimeout(() => {
+                    const reverseBtn = document.getElementById('reverse-pages-btn');
+                    if (reverseBtn) {
+                        reverseBtn.addEventListener('click', () => {
+                            this.reversePageOrder();
+                        });
+                    }
+                }, 100);
                 break;
         }
     }
@@ -2136,19 +2152,29 @@ class PDFConverterPro {
 
                 // Get the current page order from the UI
                 const pageOrder = this.getPageOrderFromUI();
-
-                if (!pageOrder || pageOrder.length !== totalPages) {
-                    // If no custom order is set, use original order
-                    const originalOrder = Array.from({ length: totalPages }, (_, i) => i);
-                    return await this.createSortedPDF(pdfDoc, originalOrder, file);
-                }
+                console.log('Total pages in PDF:', totalPages);
+                console.log('Page order from UI:', pageOrder);
 
                 // Create new PDF with sorted pages
                 const newPdfDoc = await PDFLib.PDFDocument.create();
 
-                for (const pageIndex of pageOrder) {
-                    const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageIndex]);
-                    newPdfDoc.addPage(copiedPage);
+                if (pageOrder && pageOrder.length === totalPages) {
+                    // Use custom order from UI - pageOrder contains the original page indices in the new order
+                    console.log('Applying custom page order:', pageOrder);
+                    for (const originalPageIndex of pageOrder) {
+                        console.log(`Copying page at original index: ${originalPageIndex}`);
+                        const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [originalPageIndex]);
+                        newPdfDoc.addPage(copiedPage);
+                    }
+                    this.showNotification(`Successfully reordered ${totalPages} pages in ${file.name}. Order: [${pageOrder.join(', ')}]`, 'success');
+                } else {
+                    // Use original order if no custom order is set
+                    console.log(`Using original order. PageOrder: ${pageOrder}, Length: ${pageOrder ? pageOrder.length : 'null'}, TotalPages: ${totalPages}`);
+                    for (let i = 0; i < totalPages; i++) {
+                        const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [i]);
+                        newPdfDoc.addPage(copiedPage);
+                    }
+                    this.showNotification(`No reordering applied to ${file.name} - using original order`, 'info');
                 }
 
                 const pdfBytes = await newPdfDoc.save();
@@ -2163,8 +2189,6 @@ class PDFConverterPro {
                     size: blob.size,
                     url: URL.createObjectURL(blob)
                 });
-
-                this.showNotification(`Successfully reordered pages in ${file.name}`, 'success');
 
             } catch (error) {
                 console.error('Error sorting pages:', error);
@@ -2208,10 +2232,46 @@ class PDFConverterPro {
     // Helper function to get page order from UI (for sort pages feature)
     getPageOrderFromUI() {
         const thumbnailContainer = document.getElementById('page-thumbnails');
-        if (!thumbnailContainer) return null;
+        if (!thumbnailContainer) {
+            console.log('No thumbnail container found');
+            return null;
+        }
 
         const thumbnails = thumbnailContainer.querySelectorAll('.page-thumbnail');
-        return Array.from(thumbnails).map(thumb => parseInt(thumb.dataset.pageIndex));
+        if (thumbnails.length === 0) {
+            console.log('No thumbnails found');
+            return null;
+        }
+
+        // Get the current order based on DOM position, using data-original-page-index attribute
+        // This represents the order of original page indices as they appear in the UI
+        const pageOrder = Array.from(thumbnails).map(thumb => {
+            const originalIndex = parseInt(thumb.getAttribute('data-original-page-index'));
+            console.log(`Thumbnail with originalPageIndex: ${originalIndex}`);
+            return originalIndex;
+        });
+
+        console.log('Final page order:', pageOrder);
+        return pageOrder;
+    }
+
+    // Reverse page order function
+    reversePageOrder() {
+        const thumbnailContainer = document.getElementById('page-thumbnails');
+        if (!thumbnailContainer) return;
+
+        const thumbnails = Array.from(thumbnailContainer.querySelectorAll('.page-thumbnail'));
+        if (thumbnails.length === 0) return;
+
+        // Clear container
+        thumbnailContainer.innerHTML = '';
+
+        // Add thumbnails in reverse order
+        thumbnails.reverse().forEach(thumbnail => {
+            thumbnailContainer.appendChild(thumbnail);
+        });
+
+        this.showNotification('Pages reversed! Click Process to generate the reversed PDF.', 'success');
     }
 
     // Helper function to download results
@@ -2256,41 +2316,58 @@ class PDFConverterPro {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
             const thumbnailContainer = document.getElementById('page-thumbnails');
+            const sortControls = document.querySelector('.sort-controls');
 
             if (!thumbnailContainer) return;
 
             thumbnailContainer.innerHTML = '';
             thumbnailContainer.style.display = 'grid';
 
+            // Show sort controls
+            if (sortControls) {
+                sortControls.style.display = 'block';
+            }
+
+            this.showNotification('Generating page thumbnails...', 'info');
+
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 const page = await pdf.getPage(pageNum);
-                const viewport = page.getViewport({ scale: 0.3 });
+                const viewport = page.getViewport({ scale: 0.5 });
 
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
 
-                await page.render({
+                // Render the page to canvas
+                const renderContext = {
                     canvasContext: context,
                     viewport: viewport
-                }).promise;
+                };
+
+                await page.render(renderContext).promise;
 
                 const thumbnailDiv = document.createElement('div');
                 thumbnailDiv.className = 'page-thumbnail';
                 thumbnailDiv.draggable = true;
-                thumbnailDiv.dataset.pageIndex = pageNum - 1;
+                // Store the original page index (0-based) - this represents which page from the original PDF this thumbnail shows
+                thumbnailDiv.setAttribute('data-original-page-index', pageNum - 1);
+
+                // Create a data URL from the canvas
+                const dataURL = canvas.toDataURL('image/png');
 
                 thumbnailDiv.innerHTML = `
                     <div class="thumbnail-header">Page ${pageNum}</div>
                     <div class="thumbnail-canvas-container">
-                        ${canvas.outerHTML}
+                        <img src="${dataURL}" alt="Page ${pageNum}" style="width: 100%; height: auto; display: block;">
                     </div>
                 `;
 
                 this.setupThumbnailDragAndDrop(thumbnailDiv);
                 thumbnailContainer.appendChild(thumbnailDiv);
             }
+
+            this.showNotification(`Generated ${pdf.numPages} page thumbnails. Drag to reorder!`, 'success');
 
         } catch (error) {
             console.error('Error generating thumbnails:', error);
@@ -2303,7 +2380,7 @@ class PDFConverterPro {
         thumbnail.addEventListener('dragstart', (e) => {
             thumbnail.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', thumbnail.dataset.pageIndex);
+            e.dataTransfer.setData('text/plain', thumbnail.getAttribute('data-original-page-index'));
         });
 
         thumbnail.addEventListener('dragend', () => {
@@ -2334,17 +2411,26 @@ class PDFConverterPro {
             }
         });
 
+        thumbnail.addEventListener('dragleave', (e) => {
+            const rect = thumbnail.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right ||
+                e.clientY < rect.top || e.clientY > rect.bottom) {
+                thumbnail.style.borderTop = '';
+                thumbnail.style.borderBottom = '';
+            }
+        });
+
         thumbnail.addEventListener('drop', (e) => {
             e.preventDefault();
             thumbnail.style.borderTop = '';
             thumbnail.style.borderBottom = '';
 
             const draggedPageIndex = e.dataTransfer.getData('text/plain');
-            const targetPageIndex = thumbnail.dataset.pageIndex;
+            const targetPageIndex = thumbnail.getAttribute('data-original-page-index');
 
             if (draggedPageIndex && draggedPageIndex !== targetPageIndex) {
                 const container = thumbnail.parentNode;
-                const draggedThumb = container.querySelector(`[data-page-index="${draggedPageIndex}"]`);
+                const draggedThumb = container.querySelector(`[data-original-page-index="${draggedPageIndex}"]`);
 
                 if (draggedThumb) {
                     const rect = thumbnail.getBoundingClientRect();
@@ -2356,6 +2442,129 @@ class PDFConverterPro {
                     } else {
                         container.insertBefore(draggedThumb, thumbnail);
                     }
+
+                    // Show notification that pages have been reordered
+                    this.showNotification('Pages reordered! Click Process to generate the sorted PDF.', 'success');
+                }
+            }
+        });
+    }
+
+    // Helper function to get page order from UI (for sort pages feature)
+    getPageOrderFromUI() {
+        const thumbnailContainer = document.getElementById('page-thumbnails');
+        if (!thumbnailContainer) {
+            console.log('No thumbnail container found');
+            return null;
+        }
+
+        const thumbnails = thumbnailContainer.querySelectorAll('.page-thumbnail');
+        if (thumbnails.length === 0) {
+            console.log('No thumbnails found');
+            return null;
+        }
+
+        // Get the current order based on DOM position, using data-original-page-index attribute
+        // This represents the order of original page indices as they appear in the UI
+        const pageOrder = Array.from(thumbnails).map(thumb => {
+            const originalIndex = parseInt(thumb.getAttribute('data-original-page-index'));
+            console.log(`Thumbnail with originalPageIndex: ${originalIndex}`);
+            return originalIndex;
+        });
+
+        console.log('Final page order:', pageOrder);
+        return pageOrder;
+    }
+
+    // Reverse page order function
+    reversePageOrder() {
+        const thumbnailContainer = document.getElementById('page-thumbnails');
+        if (!thumbnailContainer) return;
+
+        const thumbnails = Array.from(thumbnailContainer.querySelectorAll('.page-thumbnail'));
+        if (thumbnails.length === 0) return;
+
+        // Clear container
+        thumbnailContainer.innerHTML = '';
+
+        // Add thumbnails in reverse order
+        thumbnails.reverse().forEach(thumbnail => {
+            thumbnailContainer.appendChild(thumbnail);
+        });
+
+        this.showNotification('Pages reversed! Click Process to generate the reversed PDF.', 'success');
+    }
+
+    // Setup drag and drop for page thumbnails
+    setupThumbnailDragAndDrop(thumbnail) {
+        thumbnail.addEventListener('dragstart', (e) => {
+            thumbnail.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', thumbnail.getAttribute('data-original-page-index'));
+        });
+
+        thumbnail.addEventListener('dragend', () => {
+            thumbnail.classList.remove('dragging');
+            document.querySelectorAll('.page-thumbnail').forEach(thumb => {
+                thumb.style.borderTop = '';
+                thumb.style.borderBottom = '';
+            });
+        });
+
+        thumbnail.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            const draggingThumb = document.querySelector('.page-thumbnail.dragging');
+            if (draggingThumb && draggingThumb !== thumbnail) {
+                const rect = thumbnail.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+
+                thumbnail.style.borderTop = '';
+                thumbnail.style.borderBottom = '';
+
+                if (e.clientY < midY) {
+                    thumbnail.style.borderTop = '3px solid var(--accent-color)';
+                } else {
+                    thumbnail.style.borderBottom = '3px solid var(--accent-color)';
+                }
+            }
+        });
+
+        thumbnail.addEventListener('dragleave', (e) => {
+            const rect = thumbnail.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right ||
+                e.clientY < rect.top || e.clientY > rect.bottom) {
+                thumbnail.style.borderTop = '';
+                thumbnail.style.borderBottom = '';
+            }
+        });
+
+        thumbnail.addEventListener('drop', (e) => {
+            e.preventDefault();
+            thumbnail.style.borderTop = '';
+            thumbnail.style.borderBottom = '';
+
+            const draggedPageIndex = e.dataTransfer.getData('text/plain');
+            const targetPageIndex = thumbnail.getAttribute('data-original-page-index');
+
+            if (draggedPageIndex && draggedPageIndex !== targetPageIndex) {
+                const container = thumbnail.parentNode;
+                const draggedThumb = container.querySelector(`[data-original-page-index="${draggedPageIndex}"]`);
+
+                if (draggedThumb) {
+                    const rect = thumbnail.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    const insertAfter = e.clientY >= midY;
+
+                    if (insertAfter) {
+                        container.insertBefore(draggedThumb, thumbnail.nextSibling);
+                    } else {
+                        container.insertBefore(draggedThumb, thumbnail);
+                    }
+
+                    // Show notification that pages have been reordered
+                    this.showNotification('Pages reordered! Click Process to generate the sorted PDF.', 'success');
                 }
             }
         });
