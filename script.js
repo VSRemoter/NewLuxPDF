@@ -186,6 +186,12 @@ class PDFConverterPro {
                 title: 'Remove PDF Metadata',
                 accept: '.pdf',
                 description: 'Strip all metadata from PDF files'
+            },
+
+            'remove-password': {
+                title: 'Remove Password from PDF',
+                accept: '.pdf',
+                description: 'Decrypt password-protected PDF files'
             }
         };
         return configs[toolName] || { title: 'PDF Tool', accept: '*', description: '' };
@@ -204,9 +210,9 @@ class PDFConverterPro {
         if (this.uploadedFiles.length > 1) {
             const toolName = this.currentTool;
             if (toolName === 'merge-pdf') {
-                this.showNotification('💡 Tip: Drag files or use arrow buttons to reorder them before merging', 'info');
+                this.showNotification('💡 Tip: Use arrow buttons to reorder files before merging', 'info');
             } else if (this.uploadedFiles.length === 2) {
-                this.showNotification('💡 Tip: You can reorder files by dragging or using the arrow buttons', 'info');
+                this.showNotification('💡 Tip: You can reorder files using the arrow buttons', 'info');
             }
         }
     }
@@ -235,7 +241,7 @@ class PDFConverterPro {
         const fileList = document.getElementById('file-list');
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item fade-in';
-        fileItem.draggable = this.uploadedFiles.length > 1;
+        fileItem.draggable = false;
         fileItem.dataset.fileName = file.name;
 
         const fileSize = this.formatFileSize(file.size);
@@ -289,8 +295,8 @@ class PDFConverterPro {
             this.setupFileReorderEvents(fileItem);
         }
 
-        // Generate preview for image files automatically
-        if (file.type.includes('image')) {
+        // Generate preview for image files automatically (except for PNG/JPEG to PDF tools)
+        if (file.type.includes('image') && this.currentTool !== 'png-to-pdf' && this.currentTool !== 'jpeg-to-pdf') {
             this.generateImagePreview(file);
         }
     }
@@ -460,6 +466,38 @@ class PDFConverterPro {
                 `;
                 break;
 
+            case 'png-to-pdf':
+                optionsContainer.innerHTML = `
+                    <div class="option-group">
+                        <label>Conversion Mode</label>
+                        <select id="conversion-mode">
+                            <option value="individual">Convert each image to separate PDF</option>
+                            <option value="combined">Merge all images into single PDF</option>
+                            <option value="both">Both - Individual PDFs + Combined PDF</option>
+                        </select>
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Choose how you want your images converted to PDF format.
+                        </p>
+                    </div>
+                `;
+                break;
+
+            case 'jpeg-to-pdf':
+                optionsContainer.innerHTML = `
+                    <div class="option-group">
+                        <label>Conversion Mode</label>
+                        <select id="conversion-mode">
+                            <option value="individual">Convert each image to separate PDF</option>
+                            <option value="combined">Merge all images into single PDF</option>
+                            <option value="both">Both - Individual PDFs + Combined PDF</option>
+                        </select>
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Choose how you want your images converted to PDF format.
+                        </p>
+                    </div>
+                `;
+                break;
+
             case 'split-pdf':
                 optionsContainer.innerHTML = `
                     <div class="option-group">
@@ -490,12 +528,9 @@ class PDFConverterPro {
                             <option value="180">180°</option>
                             <option value="270">270° Clockwise (90° Counter-clockwise)</option>
                         </select>
-                    </div>
-                    <div class="option-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="all-pages-rotate" checked>
-                            <label for="all-pages-rotate">Rotate all pages</label>
-                        </div>
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            All pages will be rotated by the selected angle.
+                        </p>
                     </div>
                 `;
                 break;
@@ -514,6 +549,20 @@ class PDFConverterPro {
                         <p>Click "Process Files" to remove all metadata from your PDF.</p>
                         <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
                             This will strip all metadata including author, title, creation date, and other identifying information.
+                        </p>
+                    </div>
+                `;
+                break;
+
+
+
+            case 'remove-password':
+                optionsContainer.innerHTML = `
+                    <div class="option-group">
+                        <label>Current Password</label>
+                        <input type="password" id="current-password" placeholder="Enter current PDF password">
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Enter the password required to open this PDF file.
                         </p>
                     </div>
                 `;
@@ -584,6 +633,9 @@ class PDFConverterPro {
                     break;
                 case 'remove-metadata':
                     results = await this.removeMetadata();
+                    break;
+                case 'remove-password':
+                    results = await this.removePassword();
                     break;
             }
 
@@ -924,41 +976,82 @@ class PDFConverterPro {
     // PNG to PDF Conversion
     async convertPngToPdf() {
         try {
-            const pdfDoc = await PDFLib.PDFDocument.create();
             const results = [];
+            const conversionMode = document.getElementById('conversion-mode')?.value || 'individual';
 
-            for (const file of this.uploadedFiles) {
-                const arrayBuffer = await file.arrayBuffer();
-                const imageBytes = new Uint8Array(arrayBuffer);
+            // Create individual PDFs for each image (if mode is 'individual' or 'both')
+            if (conversionMode === 'individual' || conversionMode === 'both') {
+                for (const file of this.uploadedFiles) {
+                    const pdfDoc = await PDFLib.PDFDocument.create();
+                    const arrayBuffer = await file.arrayBuffer();
+                    const imageBytes = new Uint8Array(arrayBuffer);
 
-                let image;
-                if (file.type.includes('png')) {
-                    image = await pdfDoc.embedPng(imageBytes);
-                } else if (file.type.includes('jpg') || file.type.includes('jpeg')) {
-                    image = await pdfDoc.embedJpg(imageBytes);
-                } else {
-                    throw new Error(`Unsupported image format: ${file.type}`);
+                    let image;
+                    if (file.type.includes('png')) {
+                        image = await pdfDoc.embedPng(imageBytes);
+                    } else if (file.type.includes('jpg') || file.type.includes('jpeg')) {
+                        image = await pdfDoc.embedJpg(imageBytes);
+                    } else {
+                        throw new Error(`Unsupported image format: ${file.type}`);
+                    }
+
+                    const page = pdfDoc.addPage([image.width, image.height]);
+                    page.drawImage(image, {
+                        x: 0,
+                        y: 0,
+                        width: image.width,
+                        height: image.height
+                    });
+
+                    const pdfBytes = await pdfDoc.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+
+                    results.push({
+                        name: file.name.replace(/\.(png|jpg|jpeg)$/i, '.pdf'),
+                        type: 'application/pdf',
+                        size: blob.size,
+                        url: url
+                    });
                 }
-
-                const page = pdfDoc.addPage([image.width, image.height]);
-                page.drawImage(image, {
-                    x: 0,
-                    y: 0,
-                    width: image.width,
-                    height: image.height
-                });
             }
 
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
+            // Create a combined PDF (if mode is 'combined' or 'both', or if only one file and mode is 'individual')
+            if (conversionMode === 'combined' || conversionMode === 'both' || (this.uploadedFiles.length > 1 && conversionMode === 'individual')) {
+                const combinedPdfDoc = await PDFLib.PDFDocument.create();
 
-            results.push({
-                name: 'converted_images.pdf',
-                type: 'application/pdf',
-                size: blob.size,
-                url: url
-            });
+                for (const file of this.uploadedFiles) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const imageBytes = new Uint8Array(arrayBuffer);
+
+                    let image;
+                    if (file.type.includes('png')) {
+                        image = await combinedPdfDoc.embedPng(imageBytes);
+                    } else if (file.type.includes('jpg') || file.type.includes('jpeg')) {
+                        image = await combinedPdfDoc.embedJpg(imageBytes);
+                    }
+
+                    const page = combinedPdfDoc.addPage([image.width, image.height]);
+                    page.drawImage(image, {
+                        x: 0,
+                        y: 0,
+                        width: image.width,
+                        height: image.height
+                    });
+                }
+
+                const combinedPdfBytes = await combinedPdfDoc.save();
+                const combinedBlob = new Blob([combinedPdfBytes], { type: 'application/pdf' });
+                const combinedUrl = URL.createObjectURL(combinedBlob);
+
+                const combinedName = conversionMode === 'combined' ? 'converted_images.pdf' : 'combined_images.pdf';
+                results.push({
+                    name: combinedName,
+                    type: 'application/pdf',
+                    size: combinedBlob.size,
+                    url: combinedUrl
+                });
+            }
 
             return results;
         } catch (error) {
@@ -970,35 +1063,71 @@ class PDFConverterPro {
     // JPEG to PDF Conversion
     async convertJpegToPdf() {
         try {
-            const pdfDoc = await PDFLib.PDFDocument.create();
             const results = [];
+            const conversionMode = document.getElementById('conversion-mode')?.value || 'individual';
 
-            for (const file of this.uploadedFiles) {
-                const arrayBuffer = await file.arrayBuffer();
-                const imageBytes = new Uint8Array(arrayBuffer);
+            // Create individual PDFs for each image (if mode is 'individual' or 'both')
+            if (conversionMode === 'individual' || conversionMode === 'both') {
+                for (const file of this.uploadedFiles) {
+                    const pdfDoc = await PDFLib.PDFDocument.create();
+                    const arrayBuffer = await file.arrayBuffer();
+                    const imageBytes = new Uint8Array(arrayBuffer);
 
-                // Embed JPEG image
-                const image = await pdfDoc.embedJpg(imageBytes);
+                    // Embed JPEG image
+                    const image = await pdfDoc.embedJpg(imageBytes);
 
-                const page = pdfDoc.addPage([image.width, image.height]);
-                page.drawImage(image, {
-                    x: 0,
-                    y: 0,
-                    width: image.width,
-                    height: image.height
-                });
+                    const page = pdfDoc.addPage([image.width, image.height]);
+                    page.drawImage(image, {
+                        x: 0,
+                        y: 0,
+                        width: image.width,
+                        height: image.height
+                    });
+
+                    const pdfBytes = await pdfDoc.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+
+                    results.push({
+                        name: file.name.replace(/\.(jpg|jpeg)$/i, '.pdf'),
+                        type: 'application/pdf',
+                        size: blob.size,
+                        url: url
+                    });
+                }
             }
 
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
+            // Create a combined PDF (if mode is 'combined' or 'both', or if only one file and mode is 'individual')
+            if (conversionMode === 'combined' || conversionMode === 'both' || (this.uploadedFiles.length > 1 && conversionMode === 'individual')) {
+                const combinedPdfDoc = await PDFLib.PDFDocument.create();
 
-            results.push({
-                name: 'converted_images.pdf',
-                type: 'application/pdf',
-                size: blob.size,
-                url: url
-            });
+                for (const file of this.uploadedFiles) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const imageBytes = new Uint8Array(arrayBuffer);
+
+                    const image = await combinedPdfDoc.embedJpg(imageBytes);
+
+                    const page = combinedPdfDoc.addPage([image.width, image.height]);
+                    page.drawImage(image, {
+                        x: 0,
+                        y: 0,
+                        width: image.width,
+                        height: image.height
+                    });
+                }
+
+                const combinedPdfBytes = await combinedPdfDoc.save();
+                const combinedBlob = new Blob([combinedPdfBytes], { type: 'application/pdf' });
+                const combinedUrl = URL.createObjectURL(combinedBlob);
+
+                const combinedName = conversionMode === 'combined' ? 'converted_images.pdf' : 'combined_images.pdf';
+                results.push({
+                    name: combinedName,
+                    type: 'application/pdf',
+                    size: combinedBlob.size,
+                    url: combinedUrl
+                });
+            }
 
             return results;
         } catch (error) {
@@ -1156,36 +1285,146 @@ class PDFConverterPro {
 
         for (const file of this.uploadedFiles) {
             try {
-                const text = await file.text();
+                // Read text with better error handling
+                let text;
+                try {
+                    text = await file.text();
+                } catch (readError) {
+                    // Try alternative reading method for problematic files
+                    const arrayBuffer = await file.arrayBuffer();
+                    const decoder = new TextDecoder('utf-8', { fatal: false });
+                    text = decoder.decode(arrayBuffer);
+                }
+
+                // Sanitize text - remove or replace problematic characters
+                text = text
+                    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
+                    .replace(/\r\n/g, '\n') // Normalize line endings
+                    .replace(/\r/g, '\n')
+                    .trim();
+
+                if (!text) {
+                    throw new Error('File appears to be empty or contains no readable text');
+                }
 
                 // Create PDF document
                 const pdfDoc = await PDFLib.PDFDocument.create();
-                const page = pdfDoc.addPage([595, 842]); // A4 size
 
-                // Add text to PDF
-                const { width, height } = page.getSize();
-                page.drawText(text, {
-                    x: 50,
-                    y: height - 50,
-                    size: 12,
-                    maxWidth: width - 100,
-                    lineHeight: 16
-                });
+                // Set up font and page dimensions
+                const fontSize = 11;
+                const lineHeight = fontSize * 1.4;
+                const margin = 50;
+                const pageWidth = 595; // A4 width
+                const pageHeight = 842; // A4 height
+                const textWidth = pageWidth - (margin * 2);
+                const textHeight = pageHeight - (margin * 2);
+
+                // Split text into lines and handle word wrapping
+                const lines = [];
+                const textLines = text.split('\n');
+
+                for (const line of textLines) {
+                    if (line.length === 0) {
+                        lines.push(''); // Preserve empty lines
+                        continue;
+                    }
+
+                    // Simple word wrapping - split long lines
+                    const words = line.split(' ');
+                    let currentLine = '';
+
+                    for (const word of words) {
+                        const testLine = currentLine ? `${currentLine} ${word}` : word;
+
+                        // Rough character width estimation (more accurate than before)
+                        const estimatedWidth = testLine.length * (fontSize * 0.6);
+
+                        if (estimatedWidth <= textWidth) {
+                            currentLine = testLine;
+                        } else {
+                            if (currentLine) {
+                                lines.push(currentLine);
+                                currentLine = word;
+                            } else {
+                                // Word is too long, split it
+                                const maxCharsPerLine = Math.floor(textWidth / (fontSize * 0.6));
+                                for (let i = 0; i < word.length; i += maxCharsPerLine) {
+                                    lines.push(word.substring(i, i + maxCharsPerLine));
+                                }
+                                currentLine = '';
+                            }
+                        }
+                    }
+
+                    if (currentLine) {
+                        lines.push(currentLine);
+                    }
+                }
+
+                // Calculate lines per page
+                const linesPerPage = Math.floor(textHeight / lineHeight);
+                let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                let currentY = pageHeight - margin;
+                let lineCount = 0;
+
+                // Add text to PDF with proper pagination
+                for (const line of lines) {
+                    // Check if we need a new page
+                    if (lineCount >= linesPerPage) {
+                        currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                        currentY = pageHeight - margin;
+                        lineCount = 0;
+                    }
+
+                    try {
+                        // Draw text line by line for better control
+                        currentPage.drawText(line || ' ', {
+                            x: margin,
+                            y: currentY,
+                            size: fontSize,
+                            maxWidth: textWidth,
+                            lineHeight: lineHeight
+                        });
+                    } catch (drawError) {
+                        // If drawing fails, try with sanitized text
+                        const sanitizedLine = line.replace(/[^\x20-\x7E\n]/g, '?'); // Replace non-printable chars
+                        currentPage.drawText(sanitizedLine || ' ', {
+                            x: margin,
+                            y: currentY,
+                            size: fontSize,
+                            maxWidth: textWidth,
+                            lineHeight: lineHeight
+                        });
+                    }
+
+                    currentY -= lineHeight;
+                    lineCount++;
+                }
 
                 const pdfBytes = await pdfDoc.save();
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                 const url = URL.createObjectURL(blob);
 
                 results.push({
-                    name: file.name.replace('.txt', '.pdf'),
+                    name: file.name.replace(/\.txt$/i, '.pdf'),
                     type: 'application/pdf',
                     size: blob.size,
                     url: url
                 });
+
+                this.showNotification(`Successfully converted ${file.name} to PDF`, 'success');
+
             } catch (error) {
                 console.error('Error converting text to PDF:', error);
-                throw new Error(`Failed to convert ${file.name} to PDF`);
+                this.showNotification(`Failed to convert ${file.name}: ${error.message}`, 'error');
+
+                // Continue with other files instead of stopping completely
+                continue;
             }
+        }
+
+        if (results.length === 0) {
+            throw new Error('Failed to convert any text files to PDF');
         }
 
         return results;
@@ -1478,11 +1717,11 @@ class PDFConverterPro {
 
                 // Calculate size difference
                 const sizeDifference = originalSize - cleanSize;
-                const sizeChangeText = sizeDifference > 0 ? 
-                    `(${this.formatFileSize(sizeDifference)} smaller)` : 
-                    sizeDifference < 0 ? 
-                    `(${this.formatFileSize(Math.abs(sizeDifference))} larger)` : 
-                    '(same size)';
+                const sizeChangeText = sizeDifference > 0 ?
+                    `(${this.formatFileSize(sizeDifference)} smaller)` :
+                    sizeDifference < 0 ?
+                        `(${this.formatFileSize(Math.abs(sizeDifference))} larger)` :
+                        '(same size)';
 
                 this.showNotification(`Metadata removed from ${file.name} ${sizeChangeText}`, 'success');
 
@@ -1496,7 +1735,7 @@ class PDFConverterPro {
             } catch (error) {
                 console.error('Error removing metadata:', error);
                 this.showNotification(`Failed to remove metadata from ${file.name}: ${error.message}`, 'error');
-                
+
                 // Return original file as fallback
                 results.push({
                     name: file.name,
@@ -1514,7 +1753,6 @@ class PDFConverterPro {
     async rotatePdf() {
         const results = [];
         const rotationAngle = parseInt(document.getElementById('rotation-angle').value);
-        const allPages = document.getElementById('all-pages-rotate').checked;
 
         for (const file of this.uploadedFiles) {
             try {
@@ -1522,10 +1760,8 @@ class PDFConverterPro {
                 const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
                 const pageCount = pdfDoc.getPageCount();
 
-                // Determine which pages to rotate
-                const pagesToRotate = allPages
-                    ? Array.from({ length: pageCount }, (_, i) => i)
-                    : [0]; // Just first page if not all pages
+                // Always rotate all pages
+                const pagesToRotate = Array.from({ length: pageCount }, (_, i) => i);
 
                 // Apply rotation - fix for 180° and 270° rotations
                 pagesToRotate.forEach(pageIndex => {
@@ -1554,6 +1790,142 @@ class PDFConverterPro {
             } catch (error) {
                 console.error('Error rotating PDF:', error);
                 throw new Error(`Failed to rotate ${file.name}`);
+            }
+        }
+
+        return results;
+    }
+
+
+
+    // Remove Password from PDF (Decrypt)
+    async removePassword() {
+        const results = [];
+        const currentPassword = document.getElementById('current-password')?.value;
+
+        // Validate password input
+        if (!currentPassword) {
+            this.showNotification('Please enter the current PDF password', 'error');
+            return results;
+        }
+
+        for (const file of this.uploadedFiles) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+
+                // Use pdf.js to handle encrypted PDFs (better encryption support than pdf-lib)
+                if (typeof pdfjsLib === 'undefined') {
+                    this.showNotification('PDF.js library not available. Cannot decrypt PDFs.', 'error');
+                    continue;
+                }
+
+                // Try to load the PDF with pdf.js and the provided password
+                let pdfDocument;
+                try {
+                    const loadingTask = pdfjsLib.getDocument({
+                        data: arrayBuffer,
+                        password: currentPassword,
+                        verbosity: 0
+                    });
+                    pdfDocument = await loadingTask.promise;
+                } catch (pdfJsError) {
+                    console.error('PDF.js error:', pdfJsError);
+
+                    // Check for password-related errors
+                    if (pdfJsError.name === 'PasswordException' ||
+                        pdfJsError.message.includes('password') ||
+                        pdfJsError.message.includes('Invalid PDF') ||
+                        pdfJsError.code === 1) {
+                        this.showNotification(`Incorrect password for ${file.name}`, 'error');
+                    } else {
+                        this.showNotification(`Failed to open ${file.name}: ${pdfJsError.message}`, 'error');
+                    }
+
+                    // Return original file as fallback
+                    results.push({
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        url: URL.createObjectURL(file)
+                    });
+                    continue;
+                }
+
+                // If we get here, the password was correct
+                // Now recreate the PDF without encryption using pdf-lib
+                this.showNotification(`Correct password for ${file.name}. Removing encryption...`, 'info');
+
+                const newPdf = await PDFLib.PDFDocument.create();
+                const numPages = pdfDocument.numPages;
+
+                // Render each page and add to new PDF
+                for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                    try {
+                        const page = await pdfDocument.getPage(pageNum);
+                        const viewport = page.getViewport({ scale: 2.0 }); // High resolution
+
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                        // Convert canvas to image and embed in new PDF
+                        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                        const imageBytes = this.dataUrlToBytes(imageDataUrl);
+                        const image = await newPdf.embedJpg(imageBytes);
+
+                        const pdfPage = newPdf.addPage([viewport.width, viewport.height]);
+                        pdfPage.drawImage(image, {
+                            x: 0,
+                            y: 0,
+                            width: viewport.width,
+                            height: viewport.height
+                        });
+                    } catch (pageError) {
+                        console.error(`Error processing page ${pageNum}:`, pageError);
+                        this.showNotification(`Warning: Error processing page ${pageNum} of ${file.name}`, 'info');
+                    }
+                }
+
+                // Save the new PDF without encryption
+                const decryptedBytes = await newPdf.save({
+                    useObjectStreams: false,
+                    addDefaultPage: false
+                });
+
+                const decryptedBlob = new Blob([decryptedBytes], { type: 'application/pdf' });
+
+                // Verify the new PDF can be opened without password
+                try {
+                    await PDFLib.PDFDocument.load(decryptedBytes, { ignoreEncryption: false });
+                    this.showNotification(`✅ Successfully removed password protection from ${file.name}`, 'success');
+                } catch (verifyError) {
+                    this.showNotification(`⚠️ Created unprotected version of ${file.name}, but please verify the result`, 'info');
+                }
+
+                results.push({
+                    name: `unlocked_${file.name}`,
+                    type: 'application/pdf',
+                    size: decryptedBlob.size,
+                    url: URL.createObjectURL(decryptedBlob)
+                });
+
+                // Clean up pdf.js document
+                pdfDocument.destroy();
+
+            } catch (error) {
+                console.error('Unexpected error in password removal:', error);
+                this.showNotification(`Failed to process ${file.name}: ${error.message}`, 'error');
+
+                // Return original file as fallback
+                results.push({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    url: URL.createObjectURL(file)
+                });
             }
         }
 
