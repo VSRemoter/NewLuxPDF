@@ -461,10 +461,79 @@ Upload Area */
     margin-bottom: 0.8rem;
     border-left: 4px solid var(--primary-color);
     transition: var(--transition);
+    position: relative;
 }
 
 .file-item:hover {
     background: rgba(255, 255, 255, 0.08);
+}
+
+.file-item[draggable="true"] {
+    cursor: move;
+}
+
+.file-item.dragging {
+    opacity: 0.6;
+    transform: scale(1.02) rotate(1deg);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    position: relative;
+}
+
+/* Reorder Controls */
+.reorder-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    margin-right: 1rem;
+    opacity: 0.7;
+    transition: var(--transition);
+}
+
+.file-item:hover .reorder-controls {
+    opacity: 1;
+}
+
+.reorder-btn {
+    background: rgba(58, 123, 213, 0.2);
+    color: var(--primary-color);
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.reorder-btn:hover {
+    background: rgba(58, 123, 213, 0.3);
+    transform: scale(1.1);
+}
+
+.reorder-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.drag-handle {
+    color: rgba(248, 250, 252, 0.4);
+    cursor: grab;
+    padding: 0.2rem;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.drag-handle:hover {
+    color: var(--accent-color);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
 }
 
 .file-info {
@@ -824,13 +893,13 @@ Upload Area */
 
 /* Animation Classes */
 .fade-in {
-    animation: fadeIn 0.3s ease-in;
+    animation: fadeIn 0.15s ease-in;
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(10px);
     }
 
     to {

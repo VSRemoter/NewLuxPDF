@@ -194,6 +194,16 @@ class PDFConverterPro {
             }
         });
         this.updateProcessButton();
+
+        // Show reordering tip for multiple files
+        if (this.uploadedFiles.length > 1) {
+            const toolName = this.currentTool;
+            if (toolName === 'merge-pdf') {
+                this.showNotification('💡 Tip: Drag files or use arrow buttons to reorder them before merging', 'info');
+            } else if (this.uploadedFiles.length === 2) {
+                this.showNotification('💡 Tip: You can reorder files by dragging or using the arrow buttons', 'info');
+            }
+        }
     }
 
     validateFile(file) {
@@ -220,11 +230,36 @@ class PDFConverterPro {
         const fileList = document.getElementById('file-list');
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item fade-in';
+        fileItem.draggable = this.uploadedFiles.length > 1;
+        fileItem.dataset.fileName = file.name;
 
         const fileSize = this.formatFileSize(file.size);
         const fileIcon = this.getFileIcon(file.type);
 
+        // Show reorder controls only when there are multiple files
+        const showReorderControls = this.uploadedFiles.length > 1;
+        const currentIndex = this.uploadedFiles.findIndex(f => f.name === file.name);
+        const isFirst = currentIndex === 0;
+        const isLast = currentIndex === this.uploadedFiles.length - 1;
+
+        const reorderControls = showReorderControls ? `
+            <div class="reorder-controls">
+                <button class="reorder-btn" onclick="window.pdfConverter.moveFileUp('${file.name}')" 
+                        title="Move up" ${isFirst ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+                <button class="reorder-btn" onclick="window.pdfConverter.moveFileDown('${file.name}')" 
+                        title="Move down" ${isLast ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="drag-handle" title="Drag to reorder">
+                    <i class="fas fa-grip-vertical"></i>
+                </div>
+            </div>
+        ` : '';
+
         fileItem.innerHTML = `
+            ${reorderControls}
             <div class="file-info">
                 <i class="fas ${fileIcon} file-icon"></i>
                 <div class="file-details">
@@ -244,6 +279,11 @@ class PDFConverterPro {
 
         fileList.appendChild(fileItem);
 
+        // Add drag and drop event listeners only if there are multiple files
+        if (showReorderControls) {
+            this.setupFileReorderEvents(fileItem);
+        }
+
         // Generate preview for image files automatically
         if (file.type.includes('image')) {
             this.generateImagePreview(file);
@@ -260,6 +300,113 @@ class PDFConverterPro {
         const fileList = document.getElementById('file-list');
         fileList.innerHTML = '';
         this.uploadedFiles.forEach(file => this.addFileToList(file));
+    }
+
+    // File reordering methods
+    moveFileUp(fileName) {
+        const index = this.uploadedFiles.findIndex(file => file.name === fileName);
+        if (index > 0) {
+            // Swap with previous file
+            [this.uploadedFiles[index - 1], this.uploadedFiles[index]] =
+                [this.uploadedFiles[index], this.uploadedFiles[index - 1]];
+            this.updateFileList();
+        }
+    }
+
+    moveFileDown(fileName) {
+        const index = this.uploadedFiles.findIndex(file => file.name === fileName);
+        if (index < this.uploadedFiles.length - 1) {
+            // Swap with next file
+            [this.uploadedFiles[index], this.uploadedFiles[index + 1]] =
+                [this.uploadedFiles[index + 1], this.uploadedFiles[index]];
+            this.updateFileList();
+        }
+    }
+
+    setupFileReorderEvents(fileItem) {
+        fileItem.addEventListener('dragstart', (e) => {
+            fileItem.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', fileItem.dataset.fileName);
+        });
+
+        fileItem.addEventListener('dragend', (e) => {
+            fileItem.classList.remove('dragging');
+            // Remove all drop indicators
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.style.borderTop = '';
+                item.style.borderBottom = '';
+            });
+        });
+
+        fileItem.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            const draggingItem = document.querySelector('.file-item.dragging');
+            if (draggingItem && draggingItem !== fileItem) {
+                const rect = fileItem.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+
+                // Clear previous indicators
+                fileItem.style.borderTop = '';
+                fileItem.style.borderBottom = '';
+
+                // Show drop indicator
+                if (e.clientY < midY) {
+                    fileItem.style.borderTop = '3px solid var(--accent-color)';
+                } else {
+                    fileItem.style.borderBottom = '3px solid var(--accent-color)';
+                }
+            }
+        });
+
+        fileItem.addEventListener('dragleave', (e) => {
+            // Only clear if we're actually leaving the element
+            const rect = fileItem.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right ||
+                e.clientY < rect.top || e.clientY > rect.bottom) {
+                fileItem.style.borderTop = '';
+                fileItem.style.borderBottom = '';
+            }
+        });
+
+        fileItem.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileItem.style.borderTop = '';
+            fileItem.style.borderBottom = '';
+
+            const draggedFileName = e.dataTransfer.getData('text/plain');
+            const targetFileName = fileItem.dataset.fileName;
+
+            if (draggedFileName && draggedFileName !== targetFileName) {
+                const draggedIndex = this.uploadedFiles.findIndex(file => file.name === draggedFileName);
+                const targetIndex = this.uploadedFiles.findIndex(file => file.name === targetFileName);
+
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    // Determine if we should insert before or after target
+                    const rect = fileItem.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    const insertAfter = e.clientY >= midY;
+
+                    // Remove dragged file
+                    const draggedFile = this.uploadedFiles.splice(draggedIndex, 1)[0];
+
+                    // Calculate new insertion index
+                    let newIndex = targetIndex;
+                    if (draggedIndex < targetIndex) {
+                        newIndex = targetIndex - 1;
+                    }
+                    if (insertAfter) {
+                        newIndex++;
+                    }
+
+                    // Insert at new position
+                    this.uploadedFiles.splice(newIndex, 0, draggedFile);
+                    this.updateFileList();
+                }
+            }
+        });
     }
 
     clearFileList() {
@@ -349,7 +496,6 @@ class PDFConverterPro {
                 break;
 
             case 'compress-pdf':
-                // No options needed for compression
                 optionsContainer.innerHTML = `
                     <div class="option-group">
                         <p>Click "Process Files" to compress your PDF.</p>
@@ -692,108 +838,68 @@ class PDFConverterPro {
     }
 
     // PDF to PNG Conversion
-    async convertPdfToPng() {
+    async convertPdfToImage(format = 'png') {
         const results = [];
         const allPages = document.getElementById('all-pages').checked;
+        const isJpeg = format === 'jpeg';
 
         for (const file of this.uploadedFiles) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
-                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-                const pageCount = pdfDoc.getPageCount();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+                const pageCount = pdf.numPages;
 
-                // Determine which pages to convert
                 const pagesToConvert = allPages
-                    ? Array.from({ length: pageCount }, (_, i) => i)
-                    : [0]; // Just first page if not all pages
+                    ? Array.from({ length: pageCount }, (_, i) => i + 1)
+                    : [1];
 
-                for (const pageIndex of pagesToConvert) {
-                    const pdfPage = pdfDoc.getPage(pageIndex);
-                    const { width, height } = pdfPage.getSize();
+                for (const pageNum of pagesToConvert) {
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
 
-                    // Create a new PDF with just this page
-                    const singlePagePdf = await PDFLib.PDFDocument.create();
-                    const [copiedPage] = await singlePagePdf.copyPages(pdfDoc, [pageIndex]);
-                    singlePagePdf.addPage(copiedPage);
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-                    // Convert to PNG using canvas
-                    const pdfBytes = await singlePagePdf.save();
-                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    await page.render(renderContext).promise;
+
+                    const mimeType = isJpeg ? 'image/jpeg' : 'image/png';
+                    const quality = isJpeg ? 0.9 : undefined;
+                    const dataUrl = canvas.toDataURL(mimeType, quality);
+
+                    const blob = await (await fetch(dataUrl)).blob();
                     const url = URL.createObjectURL(blob);
 
-                    // Use pdf.js to render (simulated here)
-                    // In a real app, you'd use pdf.js to render to canvas
+                    const fileName = `${file.name.replace('.pdf', '')}_page${pageNum}.${format}`;
 
-                    // Simulate PNG creation
-                    const pageNum = pageIndex + 1;
-                    const fileName = file.name.replace('.pdf', '') + `_page${pageNum}.png`;
-
-                    // Add to results
                     results.push({
                         name: fileName,
-                        type: 'image/png',
-                        size: Math.floor(blob.size * 0.8), // Estimate PNG size
+                        type: mimeType,
+                        size: blob.size,
                         url: url
                     });
                 }
             } catch (error) {
-                console.error('Error converting PDF to PNG:', error);
-                throw new Error(`Failed to convert ${file.name} to PNG`);
+                console.error(`Error converting PDF to ${format.toUpperCase()}:`, error);
+                throw new Error(`Failed to convert ${file.name} to ${format.toUpperCase()}`);
             }
         }
-
         return results;
+    }
+
+    async convertPdfToPng() {
+        return this.convertPdfToImage('png');
     }
 
     // PDF to JPEG Conversion
     async convertPdfToJpeg() {
-        const results = [];
-        const allPages = document.getElementById('all-pages').checked;
-
-        for (const file of this.uploadedFiles) {
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-                const pageCount = pdfDoc.getPageCount();
-
-                // Determine which pages to convert
-                const pagesToConvert = allPages
-                    ? Array.from({ length: pageCount }, (_, i) => i)
-                    : [0]; // Just first page if not all pages
-
-                for (const pageIndex of pagesToConvert) {
-                    const pdfPage = pdfDoc.getPage(pageIndex);
-                    const { width, height } = pdfPage.getSize();
-
-                    // Create a new PDF with just this page
-                    const singlePagePdf = await PDFLib.PDFDocument.create();
-                    const [copiedPage] = await singlePagePdf.copyPages(pdfDoc, [pageIndex]);
-                    singlePagePdf.addPage(copiedPage);
-
-                    // Convert to JPEG using canvas
-                    const pdfBytes = await singlePagePdf.save();
-                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                    const url = URL.createObjectURL(blob);
-
-                    // Simulate JPEG creation
-                    const pageNum = pageIndex + 1;
-                    const fileName = file.name.replace('.pdf', '') + `_page${pageNum}.jpg`;
-
-                    // Add to results
-                    results.push({
-                        name: fileName,
-                        type: 'image/jpeg',
-                        size: Math.floor(blob.size * 0.7), // Estimate JPEG size
-                        url: url
-                    });
-                }
-            } catch (error) {
-                console.error('Error converting PDF to JPEG:', error);
-                throw new Error(`Failed to convert ${file.name} to JPEG`);
-            }
-        }
-
-        return results;
+        return this.convertPdfToImage('jpeg');
     }
 
     // PNG to PDF Conversion
@@ -904,7 +1010,10 @@ class PDFConverterPro {
                     // Use PDF.js for text extraction if available
                     if (typeof pdfjsLib !== 'undefined') {
                         // Load the PDF document
-                        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                        const loadingTask = pdfjsLib.getDocument({
+                            data: arrayBuffer,
+                            verbosity: 0 // Reduce console warnings
+                        });
                         const pdf = await loadingTask.promise;
                         const numPages = pdf.numPages;
 
@@ -912,41 +1021,49 @@ class PDFConverterPro {
 
                         // Extract text from each page
                         for (let i = 1; i <= numPages; i++) {
-                            extractedText += `\n--- PAGE ${i} ---\n\n`;
+                            extractedText += `--- PAGE ${i} ---\n`;
 
                             try {
                                 const page = await pdf.getPage(i);
                                 const textContent = await page.getTextContent();
 
-                                // Group text by lines for better formatting
-                                const textItems = textContent.items;
-                                const lines = {};
+                                if (textContent.items && textContent.items.length > 0) {
+                                    // Group text by lines for better formatting
+                                    const textItems = textContent.items;
+                                    const lines = {};
 
-                                for (const item of textItems) {
-                                    // Round the y-coordinate to group text lines
-                                    const y = Math.round(item.transform[5]);
-                                    if (!lines[y]) {
-                                        lines[y] = [];
+                                    for (const item of textItems) {
+                                        if (item.str && item.str.trim()) {
+                                            // Round the y-coordinate to group text lines
+                                            const y = Math.round(item.transform[5]);
+                                            if (!lines[y]) {
+                                                lines[y] = [];
+                                            }
+                                            lines[y].push({
+                                                text: item.str,
+                                                x: item.transform[4]
+                                            });
+                                        }
                                     }
-                                    lines[y].push({
-                                        text: item.str,
-                                        x: item.transform[4]
-                                    });
-                                }
 
-                                // Sort lines by y-coordinate (top to bottom)
-                                const sortedYs = Object.keys(lines).sort((a, b) => b - a);
+                                    // Sort lines by y-coordinate (top to bottom)
+                                    const sortedYs = Object.keys(lines).sort((a, b) => b - a);
 
-                                // For each line, sort text items by x-coordinate (left to right)
-                                for (const y of sortedYs) {
-                                    lines[y].sort((a, b) => a.x - b.x);
-                                    const lineText = lines[y].map(item => item.text).join(' ');
-                                    extractedText += lineText + '\n';
+                                    // For each line, sort text items by x-coordinate (left to right)
+                                    for (const y of sortedYs) {
+                                        lines[y].sort((a, b) => a.x - b.x);
+                                        const lineText = lines[y].map(item => item.text).join(' ').trim();
+                                        if (lineText) {
+                                            extractedText += lineText + '\n';
+                                        }
+                                    }
+                                } else {
+                                    extractedText += '[No text content found on this page]\n';
                                 }
 
                                 extractedText += '\n';
                             } catch (pageError) {
-                                extractedText += `[Error extracting text from page ${i}]\n\n`;
+                                extractedText += `[Error extracting text from page ${i}: ${pageError.message}]\n\n`;
                                 console.error(`Error extracting text from page ${i}:`, pageError);
                             }
                         }
@@ -1168,37 +1285,143 @@ class PDFConverterPro {
 
     // Compress PDF
     async compressPdf() {
-        // Note: Real PDF compression would require more complex algorithms
-        // This is a simplified simulation
         const results = [];
+        const { PDFDocument, PDFName, PDFDict, PDFStream, PDFNumber } = PDFLib;
 
         for (const file of this.uploadedFiles) {
             try {
                 const arrayBuffer = await file.arrayBuffer();
-                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                const originalSize = file.size;
 
-                // In a real app, you would apply actual compression techniques here
-                // For this demo, we'll just simulate compression
+                // Load PDF
+                const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
-                const pdfBytes = await pdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                // Compress images in the PDF
+                const pages = pdfDoc.getPages();
+                let imagesCompressed = 0;
 
-                // Simulate compressed size
-                const compressedSize = Math.floor(blob.size * 0.7);
+                for (const page of pages) {
+                    const resources = page.node.Resources();
+                    if (!resources) continue;
 
-                results.push({
-                    name: `compressed_${file.name}`,
-                    type: 'application/pdf',
-                    size: compressedSize,
-                    url: URL.createObjectURL(blob)
+                    const xobjects = resources.lookup(PDFName.of('XObject'));
+                    if (!(xobjects instanceof PDFDict)) continue;
+
+                    for (const [key, value] of xobjects.entries()) {
+                        const stream = pdfDoc.context.lookup(value);
+                        if (!(stream instanceof PDFStream)) continue;
+
+                        const subtype = stream.dict.get(PDFName.of('Subtype'));
+                        if (subtype !== PDFName.of('Image')) continue;
+
+                        try {
+                            const imageBytes = stream.getContents();
+                            const originalImageSize = imageBytes.length;
+
+                            // Skip very small images
+                            if (originalImageSize < 5000) continue;
+
+                            // Try to compress the image using canvas
+                            const width = stream.dict.get(PDFName.of('Width'))?.asNumber() || 0;
+                            const height = stream.dict.get(PDFName.of('Height'))?.asNumber() || 0;
+
+                            if (width > 0 && height > 0) {
+                                // Create canvas and compress image
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                canvas.width = width;
+                                canvas.height = height;
+
+                                // Create image from bytes
+                                const blob = new Blob([imageBytes]);
+                                const img = new Image();
+                                const imageUrl = URL.createObjectURL(blob);
+
+                                await new Promise((resolve, reject) => {
+                                    img.onload = resolve;
+                                    img.onerror = reject;
+                                    img.src = imageUrl;
+                                });
+
+                                ctx.drawImage(img, 0, 0, width, height);
+
+                                // Compress with good quality (0.8 = 80% quality)
+                                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                const compressedBytes = this.dataUrlToBytes(compressedDataUrl);
+
+                                // Only use compressed version if it's significantly smaller
+                                if (compressedBytes.length < originalImageSize * 0.85) {
+                                    stream.contents = compressedBytes;
+                                    stream.dict.set(PDFName.of('Length'), PDFNumber.of(compressedBytes.length));
+                                    stream.dict.set(PDFName.of('Filter'), PDFName.of('DCTDecode'));
+                                    imagesCompressed++;
+                                }
+
+                                URL.revokeObjectURL(imageUrl);
+                            }
+                        } catch (error) {
+                            console.warn('Failed to compress image:', error);
+                        }
+                    }
+                }
+
+                // Save with compression options
+                const pdfBytes = await pdfDoc.save({
+                    useObjectStreams: true,
+                    addDefaultPage: false,
+                    objectStreamsThreshold: 40,
+                    updateFieldAppearances: false
                 });
+
+                const compressedBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const compressionRatio = ((originalSize - compressedBlob.size) / originalSize * 100);
+
+                // Only return compressed version if we achieved meaningful compression
+                if (compressedBlob.size < originalSize && compressionRatio >= 5) {
+                    this.showNotification(`Compressed ${file.name} by ${compressionRatio.toFixed(1)}% (${this.formatFileSize(originalSize - compressedBlob.size)} saved)`, 'success');
+
+                    results.push({
+                        name: `compressed_${file.name}`,
+                        type: 'application/pdf',
+                        size: compressedBlob.size,
+                        url: URL.createObjectURL(compressedBlob)
+                    });
+                } else {
+                    this.showNotification(`${file.name} is already optimized (${compressionRatio.toFixed(1)}% reduction)`, 'info');
+                    results.push({
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        url: URL.createObjectURL(file)
+                    });
+                }
+
             } catch (error) {
                 console.error('Error compressing PDF:', error);
-                throw new Error(`Failed to compress ${file.name}`);
+                this.showNotification(`Failed to compress ${file.name}: ${error.message}`, 'error');
+
+                // Return original file as fallback
+                results.push({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    url: URL.createObjectURL(file)
+                });
             }
         }
 
         return results;
+    }
+
+    // Convert data URL to byte array
+    dataUrlToBytes(dataUrl) {
+        const base64 = dataUrl.split(',')[1];
+        const binaryString = atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
     }
 
     // Rotate PDF

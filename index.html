@@ -35,8 +35,8 @@
         <section class="hero">
             <div class="container">
                 <h2 class="hero-title">Your Documents Are Your Business, Not Ours. Period.</h2>
-                <p class="hero-subtitle">An open-source, free, and unrestricted platform for all your PDF needs. Convert, merge, split, and 
-                    compress your files with with privacy and efficiency in mind.
+                <p class="hero-subtitle">LuxPDF is an open-source, free, and unrestricted platform for all your PDF needs. Convert, merge, split, and 
+                    compress your files with privacy and efficiency in mind.
                 </p>
                 <div class="privacy-badge">
                     <i class="fas fa-shield-alt"></i> 100% Private - Zero Data Collection - No Server Uploads
@@ -436,6 +436,7 @@
                 </div>
                 <div class="footer-links">
                     <a href="terms.html" class="footer-link">Terms of Service</a>
+                    <a href="changelog.html" class="footer-link">Changelog</a>
                     <a href="privacy.html" class="footer-link">Privacy Policy</a>
                 </div>
                 <p class="copyright">&copy; 2025 LuxPDF. All rights reserved.</p>
@@ -443,16 +444,23 @@
         </div>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <!-- PDF Processing Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/pako@2.0.4/dist/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pica/5.1.0/pica.min.js"></script>
+
+    <!-- Main Application Script -->
+    <script src="script.js?v=1.1"></script>
+
+    <!-- PDF.js Worker Configuration -->
     <script>
-        // Initialize PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
         }
     </script>
-    <script src="script.js"></script>
+
+    <!-- BuyMeACoffee Widget -->
     <script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="luxpdf" data-description="Support me on Buy me a coffee!" data-message="Any Donation Would Be Greatly Appreciated!  :)" data-color="#40DCA5" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
 </body>
 
