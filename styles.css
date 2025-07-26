@@ -2007,6 +2007,33 @@ n Table Section */
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Image preview styling for PDF to PNG/JPEG results */
+.image-preview {
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid var(--info-color);
+    margin-left: 1rem;
+}
+
+.image-preview:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* ZIP file styling for PNG/JPEG to PDF results */
+.result-item.zip-file {
+    background: rgba(0, 200, 150, 0.05);
+    border-left: 4px solid var(--accent-color);
+    border-radius: var(--border-radius);
+}
+
+.result-item.zip-file .file-icon {
+    color: var(--accent-color);
+}
+
+.result-item.zip-file:hover {
+    background: rgba(0, 200, 150, 0.08);
+    transform: translateY(-2px);
+}
+
 /* Encryption line animation fix */
 .encryption-line::before {
     background: linear-gradient(90deg, 

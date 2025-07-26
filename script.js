@@ -476,10 +476,14 @@ class PDFConverterPro {
             case 'pdf-to-png':
                 optionsContainer.innerHTML = `
                     <div class="option-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="all-pages" checked>
-                            <label for="all-pages">Convert all pages</label>
-                        </div>
+                        <label>Download Options</label>
+                        <select id="download-option">
+                            <option value="zip">Download all pages as ZIP file</option>
+                            <option value="individual">Show individual pages to download</option>
+                        </select>
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Choose how you want to download the converted PNG images.
+                        </p>
                     </div>
                 `;
                 break;
@@ -487,10 +491,14 @@ class PDFConverterPro {
             case 'pdf-to-jpeg':
                 optionsContainer.innerHTML = `
                     <div class="option-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="all-pages" checked>
-                            <label for="all-pages">Convert all pages</label>
-                        </div>
+                        <label>Download Options</label>
+                        <select id="download-option">
+                            <option value="zip">Download all pages as ZIP file</option>
+                            <option value="individual">Show individual pages to download</option>
+                        </select>
+                        <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
+                            Choose how you want to download the converted JPEG images.
+                        </p>
                     </div>
                 `;
                 break;
@@ -500,9 +508,8 @@ class PDFConverterPro {
                     <div class="option-group">
                         <label>Conversion Mode</label>
                         <select id="conversion-mode">
-                            <option value="individual">Convert each image to separate PDF</option>
                             <option value="combined">Merge all images into single PDF</option>
-                            <option value="both">Both - Individual PDFs + Combined PDF</option>
+                            <option value="individual">Individual PDFs (ZIP + Individual files)</option>
                         </select>
                         <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
                             Choose how you want your images converted to PDF format.
@@ -516,9 +523,8 @@ class PDFConverterPro {
                     <div class="option-group">
                         <label>Conversion Mode</label>
                         <select id="conversion-mode">
-                            <option value="individual">Convert each image to separate PDF</option>
                             <option value="combined">Merge all images into single PDF</option>
-                            <option value="both">Both - Individual PDFs + Combined PDF</option>
+                            <option value="individual">Individual PDFs (ZIP + Individual files)</option>
                         </select>
                         <p style="font-size: 0.9rem; color: rgba(248, 250, 252, 0.6); margin-top: 0.5rem;">
                             Choose how you want your images converted to PDF format.
@@ -783,6 +789,11 @@ class PDFConverterPro {
         results.forEach(result => {
             const resultItem = document.createElement('div');
             resultItem.className = 'result-item fade-in';
+            
+            // Add special styling for ZIP files
+            if (result.isZipFile || result.type === 'application/zip') {
+                resultItem.classList.add('zip-file');
+            }
 
             resultItem.innerHTML = `
                 <div class="file-info">
@@ -796,7 +807,6 @@ class PDFConverterPro {
                     <i class="fas fa-download"></i> Download
                 </button>
             `;
-
             resultsList.appendChild(resultItem);
         });
 
@@ -1003,7 +1013,7 @@ class PDFConverterPro {
     // PDF to PNG Conversion
     async convertPdfToImage(format = 'png') {
         const results = [];
-        const allPages = document.getElementById('all-pages').checked;
+        const downloadOption = document.getElementById('download-option')?.value || 'zip';
         const isJpeg = format === 'jpeg';
 
         for (const file of this.uploadedFiles) {
@@ -1013,11 +1023,10 @@ class PDFConverterPro {
                 const pdf = await loadingTask.promise;
                 const pageCount = pdf.numPages;
 
-                const pagesToConvert = allPages
-                    ? Array.from({ length: pageCount }, (_, i) => i + 1)
-                    : [1];
+                const images = [];
 
-                for (const pageNum of pagesToConvert) {
+                // Convert all pages to images
+                for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
                     const page = await pdf.getPage(pageNum);
                     const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better quality
 
@@ -1037,23 +1046,61 @@ class PDFConverterPro {
                     const dataUrl = canvas.toDataURL(mimeType, quality);
 
                     const blob = await (await fetch(dataUrl)).blob();
-                    const url = URL.createObjectURL(blob);
-
                     const fileName = `${file.name.replace('.pdf', '')}_page${pageNum}.${format}`;
 
-                    results.push({
+                    images.push({
                         name: fileName,
                         type: mimeType,
                         size: blob.size,
-                        url: url
+                        blob: blob,
+                        url: URL.createObjectURL(blob)
                     });
                 }
+
+                if (downloadOption === 'zip') {
+                    // Create actual ZIP file using JSZip
+                    const zipBlob = await this.createActualZip(images, file.name.replace('.pdf', ''));
+                    const zipFileName = `${file.name.replace('.pdf', '')}_all_pages.zip`;
+                    
+                    results.push({
+                        name: zipFileName,
+                        type: 'application/zip',
+                        size: zipBlob.size,
+                        url: URL.createObjectURL(zipBlob)
+                    });
+                } else {
+                    // Return individual images
+                    results.push(...images);
+                }
+
             } catch (error) {
                 console.error(`Error converting PDF to ${format.toUpperCase()}:`, error);
                 throw new Error(`Failed to convert ${file.name} to ${format.toUpperCase()}`);
             }
         }
         return results;
+    }
+
+    // Helper function to create actual ZIP file
+    async createActualZip(images, baseName) {
+        const zip = new JSZip();
+        
+        for (const image of images) {
+            zip.file(image.name, image.blob);
+        }
+        
+        return await zip.generateAsync({ type: 'blob' });
+    }
+
+    // Helper function to create ZIP file from PDF files
+    async createPdfZip(pdfFiles) {
+        const zip = new JSZip();
+        
+        for (const pdf of pdfFiles) {
+            zip.file(pdf.name, pdf.blob);
+        }
+        
+        return await zip.generateAsync({ type: 'blob' });
     }
 
     async convertPdfToPng() {
@@ -1069,10 +1116,49 @@ class PDFConverterPro {
     async convertPngToPdf() {
         try {
             const results = [];
-            const conversionMode = document.getElementById('conversion-mode')?.value || 'individual';
+            const conversionMode = document.getElementById('conversion-mode')?.value || 'combined';
 
-            // Create individual PDFs for each image (if mode is 'individual' or 'both')
-            if (conversionMode === 'individual' || conversionMode === 'both') {
+            if (conversionMode === 'combined') {
+                // Create a single merged PDF with all images
+                const combinedPdfDoc = await PDFLib.PDFDocument.create();
+
+                for (const file of this.uploadedFiles) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const imageBytes = new Uint8Array(arrayBuffer);
+
+                    let image;
+                    if (file.type.includes('png')) {
+                        image = await combinedPdfDoc.embedPng(imageBytes);
+                    } else if (file.type.includes('jpg') || file.type.includes('jpeg')) {
+                        image = await combinedPdfDoc.embedJpg(imageBytes);
+                    } else {
+                        throw new Error(`Unsupported image format: ${file.type}`);
+                    }
+
+                    const page = combinedPdfDoc.addPage([image.width, image.height]);
+                    page.drawImage(image, {
+                        x: 0,
+                        y: 0,
+                        width: image.width,
+                        height: image.height
+                    });
+                }
+
+                const combinedPdfBytes = await combinedPdfDoc.save();
+                const combinedBlob = new Blob([combinedPdfBytes], { type: 'application/pdf' });
+                const combinedUrl = URL.createObjectURL(combinedBlob);
+
+                results.push({
+                    name: 'merged_images.pdf',
+                    type: 'application/pdf',
+                    size: combinedBlob.size,
+                    url: combinedUrl
+                });
+
+            } else if (conversionMode === 'individual') {
+                // Create individual PDFs for each image
+                const individualPdfs = [];
+
                 for (const file of this.uploadedFiles) {
                     const pdfDoc = await PDFLib.PDFDocument.create();
                     const arrayBuffer = await file.arrayBuffer();
@@ -1099,29 +1185,57 @@ class PDFConverterPro {
                     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                     const url = URL.createObjectURL(blob);
 
-                    results.push({
+                    const pdfResult = {
                         name: file.name.replace(/\.(png|jpg|jpeg)$/i, '.pdf'),
                         type: 'application/pdf',
                         size: blob.size,
-                        url: url
-                    });
+                        url: url,
+                        blob: blob
+                    };
+
+                    individualPdfs.push(pdfResult);
+                    results.push(pdfResult);
+                }
+
+                // Create ZIP file with all individual PDFs (show first)
+                if (individualPdfs.length > 1) {
+                    const zipBlob = await this.createPdfZip(individualPdfs);
+                    const zipResult = {
+                        name: 'individual_pdfs.zip',
+                        type: 'application/zip',
+                        size: zipBlob.size,
+                        url: URL.createObjectURL(zipBlob),
+                        isZipFile: true
+                    };
+                    
+                    // Insert ZIP at the beginning
+                    results.unshift(zipResult);
                 }
             }
 
-            // Create a combined PDF (if mode is 'combined' or 'both', or if only one file and mode is 'individual')
-            if (conversionMode === 'combined' || conversionMode === 'both' || (this.uploadedFiles.length > 1 && conversionMode === 'individual')) {
+            return results;
+        } catch (error) {
+            console.error('Error converting images to PDF:', error);
+            throw new Error('Failed to convert images to PDF');
+        }
+    }
+
+    // JPEG to PDF Conversion
+    async convertJpegToPdf() {
+        try {
+            const results = [];
+            const conversionMode = document.getElementById('conversion-mode')?.value || 'combined';
+
+            if (conversionMode === 'combined') {
+                // Create a single merged PDF with all images
                 const combinedPdfDoc = await PDFLib.PDFDocument.create();
 
                 for (const file of this.uploadedFiles) {
                     const arrayBuffer = await file.arrayBuffer();
                     const imageBytes = new Uint8Array(arrayBuffer);
 
-                    let image;
-                    if (file.type.includes('png')) {
-                        image = await combinedPdfDoc.embedPng(imageBytes);
-                    } else if (file.type.includes('jpg') || file.type.includes('jpeg')) {
-                        image = await combinedPdfDoc.embedJpg(imageBytes);
-                    }
+                    // Embed JPEG image
+                    const image = await combinedPdfDoc.embedJpg(imageBytes);
 
                     const page = combinedPdfDoc.addPage([image.width, image.height]);
                     page.drawImage(image, {
@@ -1136,30 +1250,17 @@ class PDFConverterPro {
                 const combinedBlob = new Blob([combinedPdfBytes], { type: 'application/pdf' });
                 const combinedUrl = URL.createObjectURL(combinedBlob);
 
-                const combinedName = conversionMode === 'combined' ? 'converted_images.pdf' : 'combined_images.pdf';
                 results.push({
-                    name: combinedName,
+                    name: 'merged_images.pdf',
                     type: 'application/pdf',
                     size: combinedBlob.size,
                     url: combinedUrl
                 });
-            }
 
-            return results;
-        } catch (error) {
-            console.error('Error converting images to PDF:', error);
-            throw new Error('Failed to convert images to PDF');
-        }
-    }
+            } else if (conversionMode === 'individual') {
+                // Create individual PDFs for each image
+                const individualPdfs = [];
 
-    // JPEG to PDF Conversion
-    async convertJpegToPdf() {
-        try {
-            const results = [];
-            const conversionMode = document.getElementById('conversion-mode')?.value || 'individual';
-
-            // Create individual PDFs for each image (if mode is 'individual' or 'both')
-            if (conversionMode === 'individual' || conversionMode === 'both') {
                 for (const file of this.uploadedFiles) {
                     const pdfDoc = await PDFLib.PDFDocument.create();
                     const arrayBuffer = await file.arrayBuffer();
@@ -1180,45 +1281,32 @@ class PDFConverterPro {
                     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                     const url = URL.createObjectURL(blob);
 
-                    results.push({
+                    const pdfResult = {
                         name: file.name.replace(/\.(jpg|jpeg)$/i, '.pdf'),
                         type: 'application/pdf',
                         size: blob.size,
-                        url: url
-                    });
-                }
-            }
+                        url: url,
+                        blob: blob
+                    };
 
-            // Create a combined PDF (if mode is 'combined' or 'both', or if only one file and mode is 'individual')
-            if (conversionMode === 'combined' || conversionMode === 'both' || (this.uploadedFiles.length > 1 && conversionMode === 'individual')) {
-                const combinedPdfDoc = await PDFLib.PDFDocument.create();
-
-                for (const file of this.uploadedFiles) {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const imageBytes = new Uint8Array(arrayBuffer);
-
-                    const image = await combinedPdfDoc.embedJpg(imageBytes);
-
-                    const page = combinedPdfDoc.addPage([image.width, image.height]);
-                    page.drawImage(image, {
-                        x: 0,
-                        y: 0,
-                        width: image.width,
-                        height: image.height
-                    });
+                    individualPdfs.push(pdfResult);
+                    results.push(pdfResult);
                 }
 
-                const combinedPdfBytes = await combinedPdfDoc.save();
-                const combinedBlob = new Blob([combinedPdfBytes], { type: 'application/pdf' });
-                const combinedUrl = URL.createObjectURL(combinedBlob);
-
-                const combinedName = conversionMode === 'combined' ? 'converted_images.pdf' : 'combined_images.pdf';
-                results.push({
-                    name: combinedName,
-                    type: 'application/pdf',
-                    size: combinedBlob.size,
-                    url: combinedUrl
-                });
+                // Create ZIP file with all individual PDFs (show first)
+                if (individualPdfs.length > 1) {
+                    const zipBlob = await this.createPdfZip(individualPdfs);
+                    const zipResult = {
+                        name: 'individual_pdfs.zip',
+                        type: 'application/zip',
+                        size: zipBlob.size,
+                        url: URL.createObjectURL(zipBlob),
+                        isZipFile: true
+                    };
+                    
+                    // Insert ZIP at the beginning
+                    results.unshift(zipResult);
+                }
             }
 
             return results;
@@ -2040,8 +2128,8 @@ class PDFConverterPro {
                 const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
                 const totalPages = pdfDoc.getPageCount();
 
-                // Parse page numbers
-                const pageNumbers = this.parsePageNumbers(pagesToExtract, totalPages);
+                // Parse page numbers (preserve user order for Extract Pages)
+                const pageNumbers = this.parsePageNumbers(pagesToExtract, totalPages, true);
 
                 if (pageNumbers.length === 0) {
                     throw new Error('No valid pages specified');
@@ -2199,8 +2287,12 @@ class PDFConverterPro {
         return results;
     }
 
-    // Helper function to parse page numbers from string input
-    parsePageNumbers(input, totalPages) {
+    // Helper function to parse page numbers from string input (preserves order for Extract Pages)
+    parsePageNumbers(input, totalPages, preserveOrder = false) {
+        if (preserveOrder) {
+            return this.parsePageNumbersPreserveOrder(input, totalPages);
+        }
+        
         const pageNumbers = new Set();
         const parts = input.split(',');
 
@@ -2227,6 +2319,36 @@ class PDFConverterPro {
         }
 
         return Array.from(pageNumbers).sort((a, b) => a - b);
+    }
+
+    // Helper function to parse page numbers preserving user order (for Extract Pages)
+    parsePageNumbersPreserveOrder(input, totalPages) {
+        const pageNumbers = [];
+        const parts = input.split(',');
+
+        for (let part of parts) {
+            part = part.trim();
+
+            if (part.includes('-')) {
+                // Handle range (e.g., "5-8")
+                const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+                if (isNaN(start) || isNaN(end) || start < 1 || end > totalPages || start > end) {
+                    throw new Error(`Invalid page range: ${part}`);
+                }
+                for (let i = start; i <= end; i++) {
+                    pageNumbers.push(i);
+                }
+            } else {
+                // Handle single page
+                const pageNum = parseInt(part);
+                if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+                    throw new Error(`Invalid page number: ${part}`);
+                }
+                pageNumbers.push(pageNum);
+            }
+        }
+
+        return pageNumbers; // Return without sorting to preserve user order
     }
 
     // Helper function to get page order from UI (for sort pages feature)
@@ -2285,6 +2407,20 @@ class PDFConverterPro {
 
         // Show success notification
         this.showNotification(`Downloaded: ${filename}`, 'success');
+    }
+
+    // Helper function to download all images (for ZIP fallback)
+    downloadAllImages(images) {
+        if (!images || images.length === 0) return;
+        
+        // Download each image with a small delay to prevent browser blocking
+        images.forEach((image, index) => {
+            setTimeout(() => {
+                this.downloadResult(image.url, image.name);
+            }, index * 200); // 200ms delay between downloads
+        });
+        
+        this.showNotification(`Downloading ${images.length} files...`, 'success');
     }
 
     // Helper function to save last used tool
