@@ -861,6 +861,13 @@ Upload Area */
     text-decoration: underline;
 }
 
+.footer-contact {
+    color: rgba(248, 250, 252, 0.7);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
 .copyright {
     color: rgba(248, 250, 252, 0.5);
     font-size: 0.9rem;

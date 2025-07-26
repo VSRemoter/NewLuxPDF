@@ -196,7 +196,7 @@ class PDFConverterPro {
             'extract-pages': {
                 title: 'Extract Pages from PDF',
                 accept: '.pdf',
-                description: 'Select and extract specific pages from PDF'
+                description: 'Select specific pages to extract from PDF. Works similarly to Split PDF.'
             },
             'remove-pages': {
                 title: 'Remove Pages from PDF',
@@ -206,7 +206,7 @@ class PDFConverterPro {
             'sort-pages': {
                 title: 'Sort PDF Pages',
                 accept: '.pdf',
-                description: 'Drag and drop to reorder PDF pages'
+                description: 'Swap & sort PDF pages in anyway you want'
             }
         };
         return configs[toolName] || { title: 'PDF Tool', accept: '*', description: '' };
