@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sort Pages</title>
+    <style>
+        :root {
+            --primary-color: #3A7CA5;
+            --primary-dark: #2F6690;
+            --text-inverted: #040303;
+            --background-primary: #040303;
+            --background-secondary: #2F6690;
+            --secondary-color: #3A7CA5;
+            --text-primary: #D9DCD6;
+        }
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: var(--background-primary); color: var(--text-primary); }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .test-thumbnails { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .test-thumbnail { background: var(--background-secondary); border: 2px solid var(--secondary-color); border-radius: 8px; padding: 1rem; text-align: center; cursor: move; }
+        .test-thumbnail.dragging { opacity: 0.6; transform: scale(1.05); }
+        .test-thumbnail[style*="border-top"] { border-top-color: var(--secondary-color) !important; }
+        .test-thumbnail[style*="border-bottom"] { border-bottom-color: var(--secondary-color) !important; }
+        button { background: var(--primary-color); color: var(--text-inverted); border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin: 0.5rem; }
+        button:hover { background: var(--primary-dark); }
+        #result { background: var(--background-secondary); padding: 1rem; border-radius: 4px; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Test Sort Pages Functionality</h1>
+        <p>This is a simple test to verify the drag and drop functionality works correctly.</p>
+        
+        <button onclick="createTestThumbnails()">Create Test Thumbnails</button>
+        <button onclick="reverseOrder()">Reverse Order</button>
+        <button onclick="getPageOrder()">Get Page Order</button>
+        
+        <div id="test-thumbnails" class="test-thumbnails"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function createTestThumbnails() {
+            const container = document.getElementById('test-thumbnails');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 5; i++) {
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'test-thumbnail';
+                thumbnail.draggable = true;
+                thumbnail.setAttribute('data-original-page-index', i - 1);
+                thumbnail.innerHTML = `<div>Page ${i}</div><div>Index: ${i - 1}</div>`;
+                
+                setupDragAndDrop(thumbnail);
+                container.appendChild(thumbnail);
+            }
+        }
+        
+        function setupDragAndDrop(thumbnail) {
+            thumbnail.addEventListener('dragstart', (e) => {
+                thumbnail.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', thumbnail.getAttribute('data-original-page-index'));
+            });
+
+            thumbnail.addEventListener('dragend', () => {
+                thumbnail.classList.remove('dragging');
+                document.querySelectorAll('.test-thumbnail').forEach(thumb => {
+                    thumb.style.borderTop = '';
+                    thumb.style.borderBottom = '';
+                });
+            });
+
+            thumbnail.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                const draggingThumb = document.querySelector('.test-thumbnail.dragging');
+                if (draggingThumb && draggingThumb !== thumbnail) {
+                    const rect = thumbnail.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+
+                    thumbnail.style.borderTop = '';
+                    thumbnail.style.borderBottom = '';
+
+                    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim();
+                    if (e.clientY < midY) {
+                        thumbnail.style.borderTop = `3px solid ${accentColor}`;
+                    } else {
+                        thumbnail.style.borderBottom = `3px solid ${accentColor}`;
+                    }
+                }
+            });
+
+            thumbnail.addEventListener('drop', (e) => {
+                e.preventDefault();
+                thumbnail.style.borderTop = '';
+                thumbnail.style.borderBottom = '';
+
+                const draggedPageIndex = e.dataTransfer.getData('text/plain');
+                const targetPageIndex = thumbnail.getAttribute('data-original-page-index');
+
+                if (draggedPageIndex && draggedPageIndex !== targetPageIndex) {
+                    const container = thumbnail.parentNode;
+                    const draggedThumb = container.querySelector(`[data-original-page-index="${draggedPageIndex}"]`);
+
+                    if (draggedThumb) {
+                        const rect = thumbnail.getBoundingClientRect();
+                        const midY = rect.top + rect.height / 2;
+                        const insertAfter = e.clientY >= midY;
+
+                        if (insertAfter) {
+                            container.insertBefore(draggedThumb, thumbnail.nextSibling);
+                        } else {
+                            container.insertBefore(draggedThumb, thumbnail);
+                        }
+                        
+                        getPageOrder();
+                    }
+                }
+            });
+        }
+        
+        function reverseOrder() {
+            const container = document.getElementById('test-thumbnails');
+            const thumbnails = Array.from(container.querySelectorAll('.test-thumbnail'));
+            
+            container.innerHTML = '';
+            thumbnails.reverse().forEach(thumbnail => {
+                container.appendChild(thumbnail);
+            });
+            
+            getPageOrder();
+        }
+        
+        function getPageOrder() {
+            const container = document.getElementById('test-thumbnails');
+            const thumbnails = container.querySelectorAll('.test-thumbnail');
+            
+            const pageOrder = Array.from(thumbnails).map(thumb => {
+                return parseInt(thumb.getAttribute('data-original-page-index'));
+            });
+            
+            document.getElementById('result').innerHTML = `
+                <h3>Current Page Order:</h3>
+                <p><strong>Order:</strong> [${pageOrder.join(', ')}]</p>
+                <p><strong>Explanation:</strong> This represents the original page indices in their current visual order.</p>
+                <p>For example, if the order is [2, 0, 1, 4, 3], it means:</p>
+                <ul>
+                    <li>First position: Original page 3 (index 2)</li>
+                    <li>Second position: Original page 1 (index 0)</li>
+                    <li>Third position: Original page 2 (index 1)</li>
+                    <li>Fourth position: Original page 5 (index 4)</li>
+                    <li>Fifth position: Original page 4 (index 3)</li>
+                </ul>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+Privacy Policy for LuxPDF
+
+Effective Date: July 23, 2025
+
+1. Your Agreement
+This Privacy Policy applies to all users who access or use the LuxPDF website and its tools. By using the site, you agree to the terms of this Privacy Policy. If you do not agree with these terms, please do not use our Service.
+
+2. Our Privacy-First Philosophy
+The core functionality of LuxPDF is performed entirely on your device (client-side). We do not upload, process, or store your files on our servers. We do not track your IP address, browser activity, or session data, beyond what is captured by third-party services as outlined below. We do not sell, rent, or trade user data under any circumstances.
+
+3. Data Collection by Third-Party Services
+While LuxPDF itself does not collect your data, our website integrates third-party services that are essential for its operation and monetization. These services may collect data to function correctly.
+- Buy Me a Coffee: To process donations, Buy Me a Coffee will collect necessary payment information. This data is subject to their privacy policy.
+
+We do not process this user data ourselves. Data collected by these services is subject to their own privacy policies and is used for their respective purposes, including analytics, ad personalization, or payment processing.
+
+4. Cookies and Tracking Technologies
+LuxPDF itself does not use cookies. However, third-party services like BuyMeACoffee may use cookies and similar technologies (like web beacons) to personalize ads and measure ad effectiveness. You can manage cookie preferences through your browser settings or opt out of personalized advertising via Google's Ad Settings.
+
+5. Do Not Track (DNT) Signals
+LuxPDF does not currently respond to Do Not Track (DNT) signals from browsers. However, we are committed to your privacy and strive to limit tracking by avoiding unnecessary data collection wherever possible.
+
+6. Third-Party Links
+Our site may contain links to third-party websites, including Buy Me a Coffee and various advertisement providers. We are not responsible for the content or privacy practices of these external sites. We encourage you to review their privacy policies before providing any personal information.
+
+7. Children's Privacy
+In compliance with the Children’s Online Privacy Protection Act (COPPA), we do not knowingly collect personal information from children under the age of 13. If we learn that we have inadvertently collected such information, we will take steps to delete it.
+
+8. Your Data Rights (EEA & California Residents)
+If you are a resident of the European Economic Area (EEA) or California, you may have certain rights regarding your personal data, including the right to access, correct, or delete any information third-party services have collected about you. Since we do not hold your data, these requests should be directed to the respective third-party services. For questions or guidance on how to do this, you can contact us at: admin@luxpdf.com
+
+9. Changes to This Privacy Policy
+We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
+
+10. Contact Us
+If you have any questions about this Privacy Policy, you can contact us at: admin@luxpdf.com
