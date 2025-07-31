@@ -29,6 +29,7 @@
     --danger-color: #FF6B6B;       /* Coral Red - Error states */
     --success-color: #10AC84;      /* Success Green - Security badges */
     --info-color: #00D2FF;         /* Cyan Blue - Info states */
+    --support-us-color: #a65eea;   /* Premium Purple for Support Us link */
 
     /* Additional Color Variables */
     --background-light: #2D4263;   /* Professional Blue-Gray - Light backgrounds */
@@ -101,6 +102,11 @@ body {
     transition: var(--transition);
     position: relative;
     padding: 0.5rem 0;
+}
+
+.nav-link[href="/support.html"] {
+    color: var(--support-us-color) !important;
+    font-weight: 700 !important; /* Make it pop */
 }
 
 .nav-link:after {
