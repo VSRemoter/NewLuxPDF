@@ -2887,62 +2887,76 @@ class PDFConverterPro {
     }
 }
 
-// Initialize the application when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', function () {
-    window.pdfConverter = new PDFConverterPro();
-    console.log('PDF Converter Pro initialized');
-
-    // Make tool cards clickable with cursor pointer
-    document.querySelectorAll('.tool-card').forEach(card => {
-        card.style.cursor = 'pointer';
-    });
-});
-
-// Initialize FAQ functionality
-document.addEventListener('DOMContentLoaded', function () {
-    // FAQ accordion functionality
+// Initialize FAQ Accordion
+function initializeFAQAccordion() {
     const faqItems = document.querySelectorAll('.faq-item');
-
     faqItems.forEach(item => {
         const question = item.querySelector('.faq-question');
+        if (question) {
+            // Prevent multiple listeners by checking for a marker
+            if (!question.dataset.faqInitialized) {
+                question.dataset.faqInitialized = 'true';
+                question.addEventListener('click', () => {
+                    item.classList.toggle('active');
+                });
+            }
+        }
+    });
+}
 
-        question.addEventListener('click', () => {
-            // Close all other items
-            faqItems.forEach(otherItem => {
-                if (otherItem !== item && otherItem.classList.contains('active')) {
-                    otherItem.classList.remove('active');
+// Initialize the main application logic
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize FAQ on all pages
+    initializeFAQAccordion();
+
+    // Check if we are on the main page (index.html) by looking for the tool grid
+    const isMainPage = document.querySelector('.tools-grid');
+
+    if (isMainPage) {
+        // Main page specific initializations
+        window.pdfConverter = new PDFConverterPro();
+        console.log('PDF Converter Pro initialized for main page');
+
+        // Make tool cards clickable
+        document.querySelectorAll('.tool-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const tool = card.dataset.tool;
+                if (tool) {
+                    window.location.href = `${tool}.html`;
                 }
             });
-
-            // Toggle current item
-            item.classList.toggle('active');
         });
-    });
-});
 
-// Add smooth scrolling for navigation links
-document.addEventListener('DOMContentLoaded', function () {
-    // Get all navigation links
-    const navLinks = document.querySelectorAll('.nav-link');
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', function (e) {
-            const targetId = this.getAttribute('href');
-
-            // Check if it's an internal link for smooth scrolling
-            if (targetId && targetId.startsWith('#')) {
+        // Handle newsletter form submission
+        const newsletterForm = document.getElementById('newsletter-form');
+        if (newsletterForm) {
+            newsletterForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                const targetSection = document.querySelector(targetId);
+                const email = document.getElementById('newsletter-email').value;
+                if (email) {
+                    window.pdfConverter.showNotification('Thank you for subscribing!', 'success');
+                    this.reset();
+                } else {
+                    window.pdfConverter.showNotification('Please enter a valid email address.', 'error');
+                }
+            });
+        }
 
-                if (targetSection) {
-                    // Smooth scroll to the section
-                    window.scrollTo({
-                        top: targetSection.offsetTop - 80, // Offset for header
-                        behavior: 'smooth'
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
                     });
                 }
-            }
-            // For external links like /support.html, do nothing and let the browser navigate.
+            });
         });
-    });
+    }
+    // Note: Tool-specific pages have their own initialization script in their respective HTML files,
+    // which creates an instance of PDFConverterPro and calls setupToolSpecificPage().
 });
