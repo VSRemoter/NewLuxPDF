@@ -4,6 +4,7 @@ class PDFConverterPro {
         this.currentTool = null;
         this.uploadedFiles = [];
         this.isReversed = false; // Track reverse state for sort-pages tool
+        this.handleFileInputChange = null; // Reference to file input change handler
         this.init();
     }
 
@@ -44,22 +45,8 @@ class PDFConverterPro {
     }
 
     bindToolPageEvents() {
-        // File input change
-        const fileInput = document.getElementById('file-input');
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => {
-                this.handleFileSelect(e.target.files);
-            });
-        }
-
-        // Upload area click
-        const uploadArea = document.getElementById('upload-area');
-        if (uploadArea) {
-            uploadArea.addEventListener('click', () => {
-                const fileInput = document.getElementById('file-input');
-                if (fileInput) fileInput.click();
-            });
-        }
+        // Ensure file input events are properly bound
+        this.bindFileInputEvents();
 
         // Process button
         const processBtn = document.getElementById('process-btn');
@@ -146,6 +133,24 @@ class PDFConverterPro {
             const files = e.dataTransfer.files;
             this.handleFileSelect(files);
         }, false);
+
+        // Ensure file input change handler is properly bound after cloning
+        this.bindFileInputEvents();
+    }
+
+    bindFileInputEvents() {
+        const fileInput = document.getElementById('file-input');
+        if (fileInput) {
+            // Remove any existing change listeners to prevent duplicates
+            fileInput.removeEventListener('change', this.handleFileInputChange);
+            
+            // Bind the change event with a reference we can remove later
+            this.handleFileInputChange = (e) => {
+                this.handleFileSelect(e.target.files);
+            };
+            
+            fileInput.addEventListener('change', this.handleFileInputChange);
+        }
     }
 
     preventDefaults(e) {
