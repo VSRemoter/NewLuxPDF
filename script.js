@@ -251,7 +251,7 @@ class PDFConverterPro {
             'remove-password': {
                 title: 'Remove Password from PDF',
                 accept: '.pdf',
-                description: 'Decrypt password-protected PDF files'
+                description: 'Remove the password of a PDF file<'
             },
             'extract-pages': {
                 title: 'Extract Pages from PDF',
