@@ -192,7 +192,7 @@ const RELATED_TOOLS_CONFIG = {
         {
             name: 'Remove Password',
             url: '/remove-password.html',
-            description: 'Remove the password of a PDF file<,
+            description: 'Remove the password of a PDF file',
             icon: '<i class="fas fa-file-pdf"></i><i class="fas fa-unlock"></i>'
         },
         {
